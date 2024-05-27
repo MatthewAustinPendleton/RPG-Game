@@ -1,12 +1,11 @@
 import javax.swing.*;
+import javax.swing.Timer;
+import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class GameFrame extends JFrame {
 
@@ -46,10 +45,14 @@ public class GameFrame extends JFrame {
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        // Create a custom content pane
+        JPanel contentPane = new JPanel(new BorderLayout());
+        contentPane.setBackground(Color.BLACK); // Set the background color to black
+        setContentPane(contentPane);
+
         layeredPane = new JLayeredPane();
-        setContentPane(layeredPane);
         layeredPane.setPreferredSize(new Dimension(1400, 800));
-        layeredPane.setBackground(Color.BLACK);
+        layeredPane.setBackground(Color.BLACK); // This is just a fallback, main color is set in contentPane
 
         preloadImages(); // Preload all images
         initMainContentPanel();
@@ -60,6 +63,8 @@ public class GameFrame extends JFrame {
         bankWindow.setVisible(false);
         bankWindow.setBounds(200, 100, 600, 400);
         layeredPane.add(bankWindow, JLayeredPane.POPUP_LAYER);
+
+        contentPane.add(layeredPane, BorderLayout.CENTER);
 
         updateButtonStates();
         setVisible(true);
@@ -89,7 +94,7 @@ public class GameFrame extends JFrame {
         mainContentPanel.setLayout(null);
         mainContentPanel.setBounds(50, 20, 850, 650);
         mainContentPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 5));
-        mainContentPanel.setBackground(Color.BLACK);
+        mainContentPanel.setBackground(Color.BLACK); // Set background to black
 
         sceneImagePanel = new BackgroundPanel(currentScene.getImagePath());
         sceneImagePanel.setBounds(0, 0, 850, 600);
@@ -164,13 +169,45 @@ public class GameFrame extends JFrame {
         JPanel foragingPanel = new JPanel(new BorderLayout());
         foragingLevelLabel = new JLabel("Foraging Level: " + foragingManager.getForagingLevel(), SwingConstants.CENTER);
         foragingLevelLabel.setFont(new Font("Serif", Font.BOLD, 18));
+
         foragingProgressBar = new JProgressBar(0, foragingManager.getForagingLevel() * 100);
         foragingProgressBar.setValue(foragingManager.getForagingExperience());
         foragingProgressBar.setStringPainted(true);
+        foragingProgressBar.setForeground(Color.YELLOW); // Set the progress bar color to yellow
+
+        // Customize the progress bar's appearance
+        UIManager.put("ProgressBar.selectionForeground", Color.BLACK);
+        UIManager.put("ProgressBar.selectionBackground", Color.BLACK);
+        foragingProgressBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 1),
+                BorderFactory.createBevelBorder(BevelBorder.RAISED)
+        ));
+
+        // Customizing the font and color of the progress bar string
+        foragingProgressBar.setFont(new Font("Serif", Font.BOLD, 16));
+
+        // Custom ProgressBarUI to change the text color
+        foragingProgressBar.setUI(new javax.swing.plaf.basic.BasicProgressBarUI() {
+            @Override
+            protected void paintString(Graphics g, int x, int y, int width, int height, int amountFull, Insets b) {
+                Graphics2D g2 = (Graphics2D) g;
+                String progressString = foragingProgressBar.getString();
+                g2.setFont(foragingProgressBar.getFont());
+                g2.setColor(Color.BLACK); // Set text color to black
+                int stringWidth = g2.getFontMetrics().stringWidth(progressString);
+                int stringHeight = g2.getFontMetrics().getHeight();
+                int stringX = x + (width - stringWidth) / 2;
+                int stringY = y + ((height + stringHeight) / 2) - g2.getFontMetrics().getDescent();
+                g2.drawString(progressString, stringX, stringY);
+            }
+        });
+
         foragingPanel.add(foragingLevelLabel, BorderLayout.NORTH);
         foragingPanel.add(foragingProgressBar, BorderLayout.CENTER);
         statsPanel.add(foragingPanel, BorderLayout.NORTH);
     }
+
+
 
     private void initCollectionsPanels() {
         for (Scene scene : scenes.values()) {
@@ -218,7 +255,7 @@ public class GameFrame extends JFrame {
     private void initButtonPanel() {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setBounds(50, 680, 1200, 50);
-        buttonPanel.setBackground(Color.BLACK);
+        buttonPanel.setBackground(Color.BLACK); // Set background to black
         moveButton = new JButton("Move");
         moveButton.addActionListener(new MoveButtonListener(this));
         forageButton = new JButton("Forage");
@@ -470,7 +507,7 @@ public class GameFrame extends JFrame {
     private Image createShadowImage(Image originalImage) {
         int width = originalImage.getWidth(null);
         int height = originalImage.getHeight(null);
-        BufferedImage shadowImage =new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage shadowImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D g2d = shadowImage.createGraphics();
         g2d.drawImage(originalImage, 0, 0, null);
@@ -486,4 +523,3 @@ public class GameFrame extends JFrame {
         return preloadedImages.get(itemName);
     }
 }
-

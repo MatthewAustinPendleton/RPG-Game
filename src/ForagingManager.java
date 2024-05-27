@@ -86,10 +86,11 @@ public class ForagingManager {
         }
 
         int expGained = foragedItem.getExperience();
-        animateForagedItem(foragedItem, () -> {
+        Item singleForagedItem = new Item(foragedItem.getName(), foragedItem.getIconPath(), foragedItem.getWeight(), expGained, foragedItem.getLevelRequirement(), 1);
+        animateForagedItem(singleForagedItem, () -> {
             gainForagingExperience(expGained);
-            showForagedItemInfo(foragedItem, expGained, calculateProgress());
-            gameFrame.revealCollectedItem(foragedItem); // Reveal item in collections
+            showForagedItemInfo(singleForagedItem, expGained, calculateProgress());
+            gameFrame.revealCollectedItem(singleForagedItem); // Reveal item in collections
             endForaging();
         });
     }
