@@ -3,6 +3,10 @@ import java.util.*;
 
 public class Main {
 
+    public static List<Item> forestLootTable = new ArrayList<>();
+    public static List<Item> forestClearingLootTable = new ArrayList<>();
+    public static List<Item> whisperingThicketLootTable = new ArrayList<>();
+
     public static Item apple, strawberry, blackberry, berry, raspberry, blueberry, truffle, elderberry, mulberry, gooseberry, huckleberry, currant, cd_rom,
             chanterelle, oystermushroom, morel, porcini, henofthewoodsmushroom, turkeytailmushroom, puffballmushroom, russulamushroom,
             mint, thyme, sage, oregano, chamomile, dandelion, plantain, yarrow, stingingnettle, wildgarlic, acorn, twigs, pinecone,
@@ -10,10 +14,10 @@ public class Main {
             fescue, ryegrass, timothygrass, granitepebble, limestonechipping, flintnodule, quartzpebble, ant, beetle, monarchbutterfly,
             swallowtailbutterfly, paintedladybutterfly, bluemorphobutterfly, redadmiralbutterfly, viceroybutterfly,
             peacockbutterfly, cabbagewhitebutterfly, moth, grasshopper, orbweaverspider, jumpingspider, wolfspider,
-            blackwidowspider, tarantula, dragonfly, bee, caterpillar, cricket, grovemint, ballofmoss, brambleberry;
-    public static List<Item> forestLootTable = new ArrayList<>();
-    public static List<Item> forestClearingLootTable = new ArrayList<>();
-    public static List<Item> whisperingThicketLootTable = new ArrayList<>();
+            blackwidowspider, tarantula, dragonfly, bee, caterpillar, cricket, grovemint, ballofmoss, brambleberry,
+            wildonion, dandeliongreen, wildcarrot, woodsorrel, cattailshoot, fiddleheadfern, hazelnut,
+            wildasparagus, twinklingartichoke, moonlitfern, midnightleaf, twinklingberry, starflower, whisperingtreebark, caspianherb, whisperwoodblossom;
+
 
     public static void generateItemList() {
         apple = new Item("Apple", "/apple-transparent.png", 50, 20, 1);
@@ -92,6 +96,16 @@ public class Main {
         grovemint = new Item("Grove Mint","/grovemint-transparent.png", 50, 35, 1);
         ballofmoss = new Item("Ball of Moss","/ballofmoss-transparent.png", 50, 35, 1);
         brambleberry = new Item("Bramble Berry","/brambleberrie-transparent.png", 50, 36, 2);
+        wildonion = new Item("Wild Onion", "/wildonion-transparent.png", 44, 45, 2);
+        dandeliongreen = new Item("Dandelion Green", "/dandeliongreen-transparent.png", 40, 50, 2);
+        wildcarrot = new Item("Wild Carrot","/wildcarrot-transparent.png", 40, 50, 2);
+        woodsorrel = new Item("Wood Sorrel", "/woodsorrel-transparent.png", 35, 55, 2);
+        cattailshoot = new Item("Cattail Shoot","/cattailshoot-transparent.png", 30, 60, 2);
+        fiddleheadfern = new Item("Fiddlehead Fern","/fiddleheadfern-transparent.png", 50, 65, 3);
+        hazelnut = new Item("Hazelnut","/hazelnut-transparent.png", 45, 68, 3);
+        wildasparagus = new Item("Wild Asparagus","/wildasparagus-transparent.png", 40, 75, 3);
+        twinklingartichoke = new Item("Twinkling Artichoke","/twinklingartichoke-transparent.png", 10, 300, 3);
+        moonlitfern = new Item("Moonlit Fern","/moonlitfern-transparent.png", 55, 150, 4);
     }
 
     public static void populateLootTables() {
@@ -176,6 +190,16 @@ public class Main {
         whisperingThicketLootTable.add(acorn);
         whisperingThicketLootTable.add(ballofmoss);
         whisperingThicketLootTable.add(twigs);
+        whisperingThicketLootTable.add(wildonion);
+        whisperingThicketLootTable.add(dandeliongreen);
+        whisperingThicketLootTable.add(wildcarrot);
+        whisperingThicketLootTable.add(woodsorrel);
+        whisperingThicketLootTable.add(cattailshoot);
+        whisperingThicketLootTable.add(fiddleheadfern);
+        whisperingThicketLootTable.add(hazelnut);
+        whisperingThicketLootTable.add(wildasparagus);
+        whisperingThicketLootTable.add(twinklingartichoke);
+        whisperingThicketLootTable.add(moonlitfern);
     }
 
     public static void main(String[] args) {

@@ -21,8 +21,9 @@ public class BankWindow extends JPanel {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
         bankPanel = new JPanel();
-        bankPanel.setLayout(new GridLayout(6, 4, 5, 5));
+        bankPanel.setLayout(new GridLayout(0, 4, 5, 5));
         JScrollPane scrollPane = new JScrollPane(bankPanel);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane, BorderLayout.CENTER);
         refreshBankPanel();
     }
