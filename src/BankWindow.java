@@ -6,8 +6,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class BankWindow extends JPanel {
+
+    private static final Logger LOGGER = Logger.getLogger(BankWindow.class.getName());
 
     private GameFrame gameFrame;
     private JPanel bankPanel;
@@ -21,14 +27,17 @@ public class BankWindow extends JPanel {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
         bankPanel = new JPanel();
-        bankPanel.setLayout(new GridLayout(0, 4, 5, 5));
+        bankPanel.setLayout(new GridLayout(0, 4, 5, 5)); // Use 0 for rows to allow vertical expansion
         JScrollPane scrollPane = new JScrollPane(bankPanel);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); // Disable horizontal scrollbar
         add(scrollPane, BorderLayout.CENTER);
         refreshBankPanel();
     }
 
     void refreshBankPanel() {
+        LOGGER.log(Level.INFO, "Refreshing bank panel...");
+        long startTime = System.currentTimeMillis();
+
         bankPanel.removeAll();
         for (Item item : bankInventory.values()) {
             JPanel itemPanel = createItemPanel(item);
@@ -36,6 +45,9 @@ public class BankWindow extends JPanel {
         }
         bankPanel.revalidate();
         bankPanel.repaint();
+
+        long endTime = System.currentTimeMillis();
+        LOGGER.log(Level.INFO, "Bank panel refreshed in " + (endTime - startTime) + " ms");
     }
 
     private JPanel createItemPanel(Item item) {
@@ -119,15 +131,22 @@ public class BankWindow extends JPanel {
     }
 
     public void addItemToBank(Item item) {
+        LOGGER.log(Level.INFO, "Adding item to bank: " + item.getName() + " x" + item.getCount());
+        long startTime = System.currentTimeMillis();
+
         if (bankInventory.containsKey(item.getName())) {
             bankInventory.get(item.getName()).incrementCount(item.getCount());
         } else {
             bankInventory.put(item.getName(), item);
         }
-        refreshBankPanel();
+        long endTime = System.currentTimeMillis();
+        LOGGER.log(Level.INFO, "Item added to bank inventory in " + (endTime - startTime) + " ms");
     }
 
     public void removeItemFromBank(Item item, int count) {
+        LOGGER.log(Level.INFO, "Removing item from bank: " + item.getName() + " x" + count);
+        long startTime = System.currentTimeMillis();
+
         if (bankInventory.containsKey(item.getName())) {
             Item bankItem = bankInventory.get(item.getName());
             if (bankItem.getCount() > count) {
@@ -135,7 +154,35 @@ public class BankWindow extends JPanel {
             } else {
                 bankInventory.remove(item.getName());
             }
-            refreshBankPanel();
         }
+        long endTime = System.currentTimeMillis();
+        LOGGER.log(Level.INFO, "Item removed from bank inventory in " + (endTime - startTime) + " ms");
+    }
+
+    // Method to deposit all items using a background thread to prevent UI lag
+    public void depositAllItemsToBank() {
+        LOGGER.log(Level.INFO, "Starting deposit all items to bank...");
+        long startTime = System.currentTimeMillis();
+
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                for (Item item : new ArrayList<>(gameFrame.getInventory().getItems())) {
+                    addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
+                }
+                gameFrame.getInventory().clear();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                long endTime = System.currentTimeMillis();
+                LOGGER.log(Level.INFO, "Deposit all items to bank completed in " + (endTime - startTime) + " ms");
+
+                refreshBankPanel();
+                gameFrame.refreshInventoryPanel();
+            }
+        };
+        worker.execute();
     }
 }

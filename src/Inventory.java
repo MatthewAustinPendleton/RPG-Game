@@ -51,9 +51,6 @@ public class Inventory {
         slot.setSize(size);
         slot.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
-        // Debugging output
-        System.out.println("Created empty slot panel with size: " + size);
-
         return slot;
     }
 

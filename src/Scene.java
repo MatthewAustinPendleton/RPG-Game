@@ -13,6 +13,7 @@ public class Scene {
         this.adjacentScenes = adjacentScenes;
         this.lootTable = lootTable;
         this.difficulty = difficulty;
+
     }
 
     public String getDescription() {
