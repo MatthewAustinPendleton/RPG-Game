@@ -106,6 +106,12 @@ public class Main {
         wildasparagus = new Item("Wild Asparagus","/wildasparagus-transparent.png", 40, 75, 3);
         twinklingartichoke = new Item("Twinkling Artichoke","/twinklingartichoke-transparent.png", 10, 300, 3);
         moonlitfern = new Item("Moonlit Fern","/moonlitfern-transparent.png", 55, 150, 4);
+        midnightleaf = new Item("Midnight Leaf", "/midnightleaf-transparent.png", 45, 225, 4);
+        twinklingberry = new Item("Twinkling Berry","/twinklingberries-transparent.png", 35, 255, 4);
+        starflower = new Item("Starflower","/starflower-transparent.png", 40, 250, 5);
+        whisperingtreebark = new Item("Whispering Tree Bark","/whisperingtreebark_transparent.png", 20, 350, 5);
+        caspianherb = new Item("Caspian Herb","/caspianherb_transparent.png",15, 400, 5);
+        whisperwoodblossom = new Item("Whisperingwood Blossom","/whisperingwoodblossom_transparent.png", 30, 600, 8);
     }
 
     public static void populateLootTables() {
@@ -200,6 +206,11 @@ public class Main {
         whisperingThicketLootTable.add(wildasparagus);
         whisperingThicketLootTable.add(twinklingartichoke);
         whisperingThicketLootTable.add(moonlitfern);
+        whisperingThicketLootTable.add(midnightleaf);
+        whisperingThicketLootTable.add(twinklingberry);
+        whisperingThicketLootTable.add(starflower);
+        whisperingThicketLootTable.add(whisperingtreebark);
+        whisperingThicketLootTable.add(whisperwoodblossom);
     }
 
     public static void main(String[] args) {
