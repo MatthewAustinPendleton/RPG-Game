@@ -10,28 +10,35 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class ForagingManager {
+
+    private static final Logger LOGGER = Logger.getLogger(ForagingManager.class.getName());
 
     private GameFrame gameFrame;
     private Timer forageTimer;
     private Random random;
     private int foragingLevel;
-    private int foragingExperience;
+    private long foragingExperience;
     private Clip forageSoundClip;
 
+    // ForagingManager constructor
     public ForagingManager(GameFrame gameFrame) {
         this.gameFrame = gameFrame;
         this.random = new Random();
         this.foragingLevel = 1;
         this.foragingExperience = 0;
+
+        if (gameFrame.getForagingProgressBar() != null) {
+            gameFrame.updateForagingProgressBar(foragingExperience, ExperienceCalculator.getExperienceForLevel(foragingLevel + 1));
+        }
     }
 
-    public void startForaging() {
+    public synchronized void startForaging() {
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();
         playForagingSound();
-
         forageTimer = new Timer(getForagingTime(), new ForagingTimerListener());
         forageTimer.setRepeats(false);
         forageTimer.start();
@@ -96,7 +103,7 @@ public class ForagingManager {
     }
 
     private double calculateProgress() {
-        int expNeeded = foragingLevel * 100;
+        long expNeeded = ExperienceCalculator.getExperienceForLevel(foragingLevel + 1);
         return ((double) foragingExperience / expNeeded) * 100;
     }
 
@@ -110,22 +117,39 @@ public class ForagingManager {
         return foragingLevel;
     }
 
-    public int getForagingExperience() {
+    public long getForagingExperience() {
         return foragingExperience;
     }
 
-    private void gainForagingExperience(int exp) {
+    private synchronized void gainForagingExperience(int exp) {
         foragingExperience += exp;
-        int expNeeded = foragingLevel * 100;
-        if (foragingExperience >= expNeeded) {
-            foragingExperience -= expNeeded;
-            foragingLevel++;
+        int newLevel = ExperienceCalculator.calculateNewLevel(foragingExperience, foragingLevel);
+        boolean leveledUp = newLevel > foragingLevel;
+
+        if (leveledUp) {
+            foragingExperience = ExperienceCalculator.calculateRemainingExperience(foragingExperience, newLevel);
+            foragingLevel = newLevel;
+            LOGGER.info("Leveled up! New Level: " + foragingLevel + " | Remaining Experience: " + foragingExperience + " | Next Level Experience: " + ExperienceCalculator.getExperienceForLevel(foragingLevel + 1));
+        }
+
+        final long finalExpNeeded = ExperienceCalculator.getExperienceForLevel(foragingLevel + 1);
+        final boolean finalLeveledUp = leveledUp;
+
+        LOGGER.info("Scheduling UI update for experience: " + foragingExperience + " / " + finalExpNeeded + " | Leveled Up: " + finalLeveledUp);
+
+        SwingUtilities.invokeLater(() -> {
+            LOGGER.info("Executing UI update for experience: " + foragingExperience + " / " + finalExpNeeded + " | Leveled Up: " + finalLeveledUp);
+            updateForagingUI(finalExpNeeded, finalLeveledUp);
+        });
+    }
+
+    private void updateForagingUI(long finalExpNeeded, boolean leveledUp) {
+        gameFrame.updateForagingProgressBar(foragingExperience, finalExpNeeded);
+        if (leveledUp) {
             gameFrame.updateForagingLevelLabel(foragingLevel);
-            gameFrame.updateForagingProgressBar(foragingExperience, foragingLevel * 100);
             playLevelUpSound();
-            gameFrame.showLevelUpMessage(foragingLevel); // Show level up message after the experience is gained
-        } else {
-            gameFrame.updateForagingProgressBar(foragingExperience, foragingLevel * 100);
+            gameFrame.showLevelUpMessage(foragingLevel);
+            LOGGER.info("Level-up notification shown for level: " + foragingLevel);
         }
     }
 
@@ -224,10 +248,6 @@ public class ForagingManager {
                     gameFrame.addForagedItemToInventory(foragedItem);
                     if (onComplete != null) {
                         onComplete.run();
-                    }
-                    // Show level up message after item and basket vanish
-                    if (foragingExperience >= foragingLevel * 100) {
-                        gameFrame.showLevelUpMessage(foragingLevel + 1);
                     }
                 }
                 itemLabel.repaint();

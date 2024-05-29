@@ -38,8 +38,10 @@ public class GameFrame extends JFrame {
         this.currentScene = scenes.get("forest");
         this.discoveredItems = new HashSet<>();
 
+        // Initialize the foraging manager first
         this.foragingManager = new ForagingManager(this);
 
+        // Set up the JFrame
         setTitle("Java GUI Game");
         setSize(1400, 800);  // Increased width for more space
         setResizable(false);
@@ -55,6 +57,12 @@ public class GameFrame extends JFrame {
         layeredPane.setBackground(Color.BLACK); // This is just a fallback, main color is set in contentPane
 
         preloadImages(); // Preload all images
+
+        // Initialize statsPanel before calling initStatsPanel
+        statsPanel = new JPanel(new BorderLayout());
+        statsPanel.setBackground(Color.LIGHT_GRAY);
+        initStatsPanel();
+
         initMainContentPanel();
         initTabbedPanel();
         initButtonPanel();
@@ -170,8 +178,9 @@ public class GameFrame extends JFrame {
         foragingLevelLabel = new JLabel("Foraging Level: " + foragingManager.getForagingLevel(), SwingConstants.CENTER);
         foragingLevelLabel.setFont(new Font("Serif", Font.BOLD, 18));
 
-        foragingProgressBar = new JProgressBar(0, foragingManager.getForagingLevel() * 100);
-        foragingProgressBar.setValue(foragingManager.getForagingExperience());
+        // Initialize progress bar with appropriate bounds
+        foragingProgressBar = new JProgressBar(0, (int) foragingManager.getForagingLevel() * 100);
+        foragingProgressBar.setValue((int) foragingManager.getForagingExperience());
         foragingProgressBar.setStringPainted(true);
         foragingProgressBar.setForeground(Color.YELLOW); // Set the progress bar color to yellow
 
@@ -206,7 +215,6 @@ public class GameFrame extends JFrame {
         foragingPanel.add(foragingProgressBar, BorderLayout.CENTER);
         statsPanel.add(foragingPanel, BorderLayout.NORTH);
     }
-
 
 
     private void initCollectionsPanels() {
@@ -297,13 +305,23 @@ public class GameFrame extends JFrame {
     }
 
     public void updateForagingLevelLabel(int foragingLevel) {
-        foragingLevelLabel.setText("Foraging Level: " + foragingLevel);
+        if (foragingLevelLabel != null) {
+            foragingLevelLabel.setText("Foraging Level: " + foragingLevel);
+            foragingLevelLabel.repaint(); // Ensure the label is repainted immediately
+        }
     }
 
-    public void updateForagingProgressBar(int experience, int maxExperience) {
-        foragingProgressBar.setMaximum(maxExperience);
-        foragingProgressBar.setValue(experience);
-        foragingProgressBar.setString(experience + " / " + maxExperience);
+    public JProgressBar getForagingProgressBar() {
+        return foragingProgressBar;
+    }
+
+    public void updateForagingProgressBar(long experience, long maxExperience) {
+        if (foragingProgressBar != null) {
+            foragingProgressBar.setMaximum((int) maxExperience);
+            foragingProgressBar.setValue((int) experience);
+            foragingProgressBar.setString(experience + " / " + maxExperience);
+            foragingProgressBar.repaint(); // Ensure the progress bar is repainted immediately
+        }
     }
 
     public Scene getCurrentScene() {
