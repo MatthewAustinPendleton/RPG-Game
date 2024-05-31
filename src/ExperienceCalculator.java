@@ -1,3 +1,6 @@
+/**
+ * ExperienceCalculator provides methods to calculate experience points and levels.
+ */
 public class ExperienceCalculator {
 
     private static final long[] EXPERIENCE_TABLE = {
@@ -11,6 +14,12 @@ public class ExperienceCalculator {
             9684577, 9684577, 10692629, 11805606, 13034431
     };
 
+    /**
+     * Returns the experience points required for the specified level.
+     *
+     * @param level the level
+     * @return the experience points required
+     */
     public static long getExperienceForLevel(int level) {
         if (level < 1 || level > EXPERIENCE_TABLE.length) {
             throw new IllegalArgumentException("Level must be between 1 and " + EXPERIENCE_TABLE.length);
@@ -18,6 +27,13 @@ public class ExperienceCalculator {
         return EXPERIENCE_TABLE[level - 1];
     }
 
+    /**
+     * Calculates the new level based on the experience points and current level.
+     *
+     * @param experience   the experience points
+     * @param currentLevel the current level
+     * @return the new level
+     */
     public static int calculateNewLevel(long experience, int currentLevel) {
         for (int level = currentLevel; level < EXPERIENCE_TABLE.length; level++) {
             if (experience < EXPERIENCE_TABLE[level]) {
@@ -27,11 +43,17 @@ public class ExperienceCalculator {
         return EXPERIENCE_TABLE.length;
     }
 
+    /**
+     * Calculates the remaining experience points needed to reach the next level.
+     *
+     * @param experience the current experience points
+     * @param level      the current level
+     * @return the remaining experience points
+     */
     public static long calculateRemainingExperience(long experience, int level) {
         if (level < 1 || level >= EXPERIENCE_TABLE.length) {
             throw new IllegalArgumentException("Level must be between 1 and " + EXPERIENCE_TABLE.length);
         }
-        return experience - EXPERIENCE_TABLE[level - 1];
+        return EXPERIENCE_TABLE[level] - experience;
     }
-
 }

@@ -7,6 +7,10 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
+/**
+ * GameFrame is the main frame for the game, containing all UI elements and
+ * managing the game state.
+ */
 public class GameFrame extends JFrame {
 
     private BankWindow bankWindow;
@@ -32,11 +36,18 @@ public class GameFrame extends JFrame {
     private Set<String> discoveredItems;
     private Map<String, ImageIcon> preloadedImages;
     private JScrollPane collectionsScrollPane;
+    boolean showPercentage = true;
 
+    /**
+     * Constructs a GameFrame with the specified scenes.
+     *
+     * @param scenes the scenes of the game
+     */
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
         this.currentScene = scenes.get("forest");
         this.discoveredItems = new HashSet<>();
+        this.collectionsPanels = new HashMap<>();
 
         // Initialize the foraging manager first
         this.foragingManager = new ForagingManager(this);
@@ -58,14 +69,9 @@ public class GameFrame extends JFrame {
 
         preloadImages(); // Preload all images
 
-        // Initialize statsPanel before calling initStatsPanel
-        statsPanel = new JPanel(new BorderLayout());
-        statsPanel.setBackground(Color.LIGHT_GRAY);
-        initStatsPanel();
-
-        initMainContentPanel();
-        initTabbedPanel();
-        initButtonPanel();
+        new MainContentPanelInitializer(this).initMainContentPanel(layeredPane, currentScene);
+        new TabbedPanelInitializer(this).initTabbedPanel(layeredPane, scenes, foragingManager);
+        new ButtonPanelInitializer(this).initButtonPanel(layeredPane);
 
         bankWindow = new BankWindow(this);
         bankWindow.setVisible(false);
@@ -81,6 +87,9 @@ public class GameFrame extends JFrame {
         SwingUtilities.invokeLater(() -> collectionsScrollPane.getVerticalScrollBar().setValue(0));
     }
 
+    /**
+     * Preloads images for faster access during the game.
+     */
     private void preloadImages() {
         preloadedImages = new HashMap<>();
         for (Scene scene : scenes.values()) {
@@ -93,217 +102,27 @@ public class GameFrame extends JFrame {
         }
     }
 
+    /**
+     * Returns the bank window of the game.
+     *
+     * @return the bank window
+     */
     public BankWindow getBankWindow() {
         return bankWindow;
     }
 
-    private void initMainContentPanel() {
-        JPanel mainContentPanel = new JPanel();
-        mainContentPanel.setLayout(null);
-        mainContentPanel.setBounds(50, 20, 850, 650);
-        mainContentPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 5));
-        mainContentPanel.setBackground(Color.BLACK); // Set background to black
-
-        sceneImagePanel = new BackgroundPanel(currentScene.getImagePath());
-        sceneImagePanel.setBounds(0, 0, 850, 600);
-        sceneImagePanel.setBorder(BorderFactory.createEmptyBorder());
-
-        sceneDescription = new JLabel(currentScene.getDescription(), SwingConstants.CENTER);
-        sceneDescription.setFont(new Font("Serif", Font.BOLD, 18));
-        sceneDescription.setBounds(0, 600, 850, 50);
-        sceneDescription.setBackground(Color.LIGHT_GRAY);
-        sceneDescription.setOpaque(true);
-
-        mainContentPanel.add(sceneImagePanel);
-        mainContentPanel.add(sceneDescription);
-        layeredPane.add(mainContentPanel, JLayeredPane.DEFAULT_LAYER);
-    }
-
-    private void initTabbedPanel() {
-        tabbedPane = new JTabbedPane();
-        inventoryPanel = new JPanel(new BorderLayout());
-        inventoryPanel.setBackground(Color.LIGHT_GRAY);
-        tabbedPane.addTab("Inventory", inventoryPanel);
-        statsPanel = new JPanel(new BorderLayout());
-        statsPanel.setBackground(Color.LIGHT_GRAY);
-        initStatsPanel();
-        tabbedPane.addTab("Stats", statsPanel);
-
-        collectionsCardLayout = new CardLayout();
-        collectionsCardPanel = new JPanel(collectionsCardLayout);
-        collectionsPanels = new HashMap<>();
-        initCollectionsPanels();
-        collectionsScrollPane = new JScrollPane(collectionsCardPanel);
-        tabbedPane.addTab("Collections", collectionsScrollPane);
-
-        tabbedPane.setBounds(950, 20, 350, 700);
-        tabbedPane.setBackground(Color.LIGHT_GRAY);
-        tabbedPane.setOpaque(true);
-        layeredPane.add(tabbedPane, JLayeredPane.DEFAULT_LAYER);
-        initInventoryPanel();
-    }
-
-    private void initInventoryPanel() {
-        JPanel slotsPanel = new JPanel(new GridBagLayout());
-        inventory = new Inventory(slotsPanel, this);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        for (int i = 0; i < 24; i++) {
-            JPanel slot = new JPanel(new BorderLayout());
-            Dimension size = new Dimension(70, 70);
-            slot.setPreferredSize(size);
-            slot.setMinimumSize(size);
-            slot.setMaximumSize(size);
-            slot.setSize(size);
-            slot.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            gbc.gridx = i % 4;
-            gbc.gridy = i / 4;
-            slotsPanel.add(slot, gbc);
-        }
-        JLabel inventoryTitle = new JLabel("Inventory", SwingConstants.CENTER);
-        inventoryTitle.setFont(new Font("Serif", Font.BOLD, 18));
-        inventoryTitle.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        inventoryPanel.add(inventoryTitle, BorderLayout.NORTH);
-        inventoryPanel.add(slotsPanel, BorderLayout.CENTER);
-
-        inventoryPanel.revalidate();
-        inventoryPanel.repaint();
-    }
-
-    private void initStatsPanel() {
-        JPanel foragingPanel = new JPanel(new BorderLayout());
-        foragingLevelLabel = new JLabel("Foraging Level: " + foragingManager.getForagingLevel(), SwingConstants.CENTER);
-        foragingLevelLabel.setFont(new Font("Serif", Font.BOLD, 18));
-
-        // Initialize progress bar with appropriate bounds
-        foragingProgressBar = new JProgressBar(0, (int) foragingManager.getForagingLevel() * 100);
-        foragingProgressBar.setValue((int) foragingManager.getForagingExperience());
-        foragingProgressBar.setStringPainted(true);
-        foragingProgressBar.setForeground(Color.YELLOW); // Set the progress bar color to yellow
-
-        // Customize the progress bar's appearance
-        UIManager.put("ProgressBar.selectionForeground", Color.BLACK);
-        UIManager.put("ProgressBar.selectionBackground", Color.BLACK);
-        foragingProgressBar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 1),
-                BorderFactory.createBevelBorder(BevelBorder.RAISED)
-        ));
-
-        // Customizing the font and color of the progress bar string
-        foragingProgressBar.setFont(new Font("Serif", Font.BOLD, 16));
-
-        // Custom ProgressBarUI to change the text color
-        foragingProgressBar.setUI(new javax.swing.plaf.basic.BasicProgressBarUI() {
-            @Override
-            protected void paintString(Graphics g, int x, int y, int width, int height, int amountFull, Insets b) {
-                Graphics2D g2 = (Graphics2D) g;
-                String progressString = foragingProgressBar.getString();
-                g2.setFont(foragingProgressBar.getFont());
-                g2.setColor(Color.BLACK); // Set text color to black
-                int stringWidth = g2.getFontMetrics().stringWidth(progressString);
-                int stringHeight = g2.getFontMetrics().getHeight();
-                int stringX = x + (width - stringWidth) / 2;
-                int stringY = y + ((height + stringHeight) / 2) - g2.getFontMetrics().getDescent();
-                g2.drawString(progressString, stringX, stringY);
-            }
-        });
-
-        foragingPanel.add(foragingLevelLabel, BorderLayout.NORTH);
-        foragingPanel.add(foragingProgressBar, BorderLayout.CENTER);
-        statsPanel.add(foragingPanel, BorderLayout.NORTH);
-    }
-
-
-    private void initCollectionsPanels() {
-        for (Scene scene : scenes.values()) {
-            JPanel panel = createCollectionsPanel(scene);
-            collectionsPanels.put(scene.getDescription(), panel);
-            collectionsCardPanel.add(panel, scene.getDescription());
-        }
-    }
-
-    private JPanel createCollectionsPanel(Scene scene) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(Color.LIGHT_GRAY);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-
-        for (Item item : scene.getLootTable()) {
-            JPanel itemPanel = createItemShadowPanel(item);
-            panel.add(itemPanel, gbc);
-            gbc.gridx++;
-            if (gbc.gridx == 3) {
-                gbc.gridx = 0;
-                gbc.gridy++;
-            }
-        }
-
-        return panel;
-    }
-
-    private void updateCollectionsPanel(Scene scene) {
-        JPanel panel = collectionsPanels.get(scene.getDescription());
-        collectionsCardPanel.removeAll();
-        collectionsCardPanel.add(panel, scene.getDescription());
-
-        collectionsCardPanel.revalidate();
-        collectionsCardPanel.repaint();
-
-        // Ensure the scroll position is at the top
-        SwingUtilities.invokeLater(() -> collectionsScrollPane.getVerticalScrollBar().setValue(0));
-    }
-
-    private void initButtonPanel() {
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setBounds(50, 680, 1200, 50);
-        buttonPanel.setBackground(Color.BLACK); // Set background to black
-        moveButton = new JButton("Move");
-        moveButton.addActionListener(new MoveButtonListener(this));
-        forageButton = new JButton("Forage");
-        forageButton.addActionListener(new ForageButtonListener(foragingManager));
-        bankButton = new JButton("Bank");
-        bankButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                toggleBankWindow();
-            }
-        });
-        depositAllButton = new JButton("Deposit All");
-        depositAllButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                depositAllItemsToBank();
-            }
-        });
-        depositAllButton.setVisible(false);
-
-        buttonPanel.add(moveButton);
-        buttonPanel.add(forageButton);
-        buttonPanel.add(bankButton);
-        buttonPanel.add(depositAllButton);
-
-        layeredPane.add(buttonPanel, JLayeredPane.DEFAULT_LAYER);
-    }
-
-    private void toggleBankWindow() {
-        boolean isBankWindowVisible = bankWindow.isVisible();
-        bankWindow.setVisible(!isBankWindowVisible);
-        updateButtonStates();
-        layeredPane.revalidate();
-        layeredPane.repaint();
-    }
-
+    /**
+     * Refreshes the inventory panel.
+     */
     public void refreshInventoryPanel() {
         inventory.refreshInventoryPanel();
     }
 
+    /**
+     * Updates the foraging level label with the specified level.
+     *
+     * @param foragingLevel the new foraging level
+     */
     public void updateForagingLevelLabel(int foragingLevel) {
         if (foragingLevelLabel != null) {
             foragingLevelLabel.setText("Foraging Level: " + foragingLevel);
@@ -311,62 +130,118 @@ public class GameFrame extends JFrame {
         }
     }
 
+    /**
+     * Returns the foraging progress bar.
+     *
+     * @return the foraging progress bar
+     */
     public JProgressBar getForagingProgressBar() {
         return foragingProgressBar;
     }
 
+    /**
+     * Updates the foraging progress bar with the specified experience and max experience.
+     *
+     * @param experience    the current experience
+     * @param maxExperience the maximum experience
+     */
     public void updateForagingProgressBar(long experience, long maxExperience) {
         if (foragingProgressBar != null) {
             foragingProgressBar.setMaximum((int) maxExperience);
             foragingProgressBar.setValue((int) experience);
-            foragingProgressBar.setString(experience + " / " + maxExperience);
+            String displayText = showPercentage ? String.format("%.2f%%", (double) experience / maxExperience * 100) :
+                    experience + " / " + maxExperience;
+            foragingProgressBar.setString(displayText);
             foragingProgressBar.repaint(); // Ensure the progress bar is repainted immediately
         }
     }
 
+    /**
+     * Returns the current scene.
+     *
+     * @return the current scene
+     */
     public Scene getCurrentScene() {
         return currentScene;
     }
 
+    /**
+     * Sets the current scene to the specified scene.
+     *
+     * @param scene the new scene
+     */
     public void setCurrentScene(Scene scene) {
         currentScene = scene;
         updateCollectionsPanel(scene);
     }
 
+    /**
+     * Returns the scenes of the game.
+     *
+     * @return the scenes of the game
+     */
     public Map<String, Scene> getScenes() {
         return scenes;
     }
 
+    /**
+     * Sets the background image of the scene to the specified image path.
+     *
+     * @param imagePath the path to the image
+     */
     public void setSceneImage(String imagePath) {
         sceneImagePanel.setBackgroundImage(imagePath);
     }
 
+    /**
+     * Updates the description of the scene to the specified description.
+     *
+     * @param description the new scene description
+     */
     public void updateSceneDescription(String description) {
         sceneDescription.setText(description);
     }
 
+    /**
+     * Disables the move button.
+     */
     public void disableMoveButton() {
         moveButton.setEnabled(false);
     }
 
+    /**
+     * Disables the forage button.
+     */
     public void disableForageButton() {
         forageButton.setEnabled(false);
     }
 
+    /**
+     * Enables the move button.
+     */
     public void enableMoveButton() {
         moveButton.setEnabled(true);
     }
 
+    /**
+     * Enables the forage button.
+     */
     public void enableForageButton() {
         forageButton.setEnabled(true);
     }
 
+    /**
+     * Updates the scene image and description, and button states.
+     */
     public void updateScene() {
         setSceneImage(currentScene.getImagePath());
         updateSceneDescription(currentScene.getDescription());
         updateButtonStates();
     }
 
+    /**
+     * Updates the states of the buttons based on the current scene and bank window visibility.
+     */
     private void updateButtonStates() {
         boolean isBankScene = "You are in the bank.".equals(currentScene.getDescription());
         boolean isBankWindowVisible = bankWindow.isVisible();
@@ -383,6 +258,11 @@ public class GameFrame extends JFrame {
         }
     }
 
+    /**
+     * Adds a foraged item to the inventory.
+     *
+     * @param item the item to add
+     */
     public void addForagedItemToInventory(Item item) {
         if (inventory.isFull()) {
             JOptionPane.showMessageDialog(this, "Inventory is full. Cannot add more items.");
@@ -398,14 +278,29 @@ public class GameFrame extends JFrame {
         }
     }
 
+    /**
+     * Returns the scene image panel.
+     *
+     * @return the scene image panel
+     */
     public JPanel getSceneImagePanel() {
         return sceneImagePanel;
     }
 
+    /**
+     * Returns the inventory of the game.
+     *
+     * @return the inventory
+     */
     public Inventory getInventory() {
         return inventory;
     }
 
+    /**
+     * Shows a level-up message with the specified new level.
+     *
+     * @param newLevel the new level
+     */
     public void showLevelUpMessage(int newLevel) {
         String message = "Foraging Level Up! (You have reached level " + newLevel + " Foraging)";
         LevelUpPanel levelUpPanel = new LevelUpPanel(message);
@@ -443,7 +338,7 @@ public class GameFrame extends JFrame {
                 } else {
                     if (counter < 40) {
                         counter++;
-                    } else if (opacity > 0) {
+                    } else if ( opacity > 0) {
                         opacity -= 0.03f;
                         levelUpPanel.setOpacity(opacity);
                         levelUpPanel.repaint();
@@ -459,19 +354,11 @@ public class GameFrame extends JFrame {
         animationTimer.start();
     }
 
-    private void depositAllItemsToBank() {
-        Map<String, Item> inventoryItems = new HashMap<>();
-        for (Item item : inventory.getItems()) {
-            inventoryItems.put(item.getName(), item);
-        }
-        for (Item item : inventoryItems.values()) {
-            bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
-        }
-        inventory.clear();
-        refreshInventoryPanel();
-        bankWindow.refreshBankPanel();
-    }
-
+    /**
+     * Reveals a collected item in the collections panel.
+     *
+     * @param item the collected item
+     */
     public void revealCollectedItem(Item item) {
         discoveredItems.add(item.getName());
         for (Scene scene : scenes.values()) {
@@ -497,7 +384,13 @@ public class GameFrame extends JFrame {
         }
     }
 
-    private JPanel createItemShadowPanel(Item item) {
+    /**
+     * Creates a panel with a shadowed icon for the specified item.
+     *
+     * @param item the item for which to create a panel
+     * @return the created panel
+     */
+    public JPanel createItemShadowPanel(Item item) {
         JPanel itemPanel = new JPanel(new BorderLayout());
         itemPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
         itemPanel.setPreferredSize(new Dimension(70, 70));
@@ -522,6 +415,12 @@ public class GameFrame extends JFrame {
         return itemPanel;
     }
 
+    /**
+     * Creates a shadow image from the specified original image.
+     *
+     * @param originalImage the original image
+     * @return the shadow image
+     */
     private Image createShadowImage(Image originalImage) {
         int width = originalImage.getWidth(null);
         int height = originalImage.getHeight(null);
@@ -537,7 +436,113 @@ public class GameFrame extends JFrame {
         return shadowImage;
     }
 
+    /**
+     * Returns the preloaded image for the specified item name.
+     *
+     * @param itemName the name of the item
+     * @return the preloaded image
+     */
     private ImageIcon getPreloadedImage(String itemName) {
         return preloadedImages.get(itemName);
+    }
+
+    public void setSceneImagePanel(BackgroundPanel sceneImagePanel) {
+        this.sceneImagePanel = sceneImagePanel;
+    }
+
+    public void setSceneDescription(JLabel sceneDescription) {
+        this.sceneDescription = sceneDescription;
+    }
+
+    public void setInventoryPanel(JPanel inventoryPanel) {
+        this.inventoryPanel = inventoryPanel;
+    }
+
+    public void setStatsPanel(JPanel statsPanel) {
+        this.statsPanel = statsPanel;
+    }
+
+    public void setCollectionsCardPanel(JPanel collectionsCardPanel) {
+        this.collectionsCardPanel = collectionsCardPanel;
+    }
+
+    public void setCollectionsScrollPane(JScrollPane collectionsScrollPane) {
+        this.collectionsScrollPane = collectionsScrollPane;
+    }
+
+    public void setForagingLevelLabel(JLabel foragingLevelLabel) {
+        this.foragingLevelLabel = foragingLevelLabel;
+    }
+
+    public void setForagingProgressBar(JProgressBar foragingProgressBar) {
+        this.foragingProgressBar = foragingProgressBar;
+    }
+
+    public void setMoveButton(JButton moveButton) {
+        this.moveButton = moveButton;
+    }
+
+    public void setForageButton(JButton forageButton) {
+        this.forageButton = forageButton;
+    }
+
+    public void setBankButton(JButton bankButton) {
+        this.bankButton = bankButton;
+    }
+
+    public void setDepositAllButton(JButton depositAllButton) {
+        this.depositAllButton = depositAllButton;
+    }
+
+    public void setTabbedPane(JTabbedPane tabbedPane) {
+        this.tabbedPane = tabbedPane;
+    }
+
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
+
+    public Map<String, JPanel> getCollectionsPanels() {
+        return collectionsPanels;
+    }
+
+    public ForagingManager getForagingManager() {
+        return foragingManager;
+    }
+
+    public boolean getBoolShowPercentage() {
+        return showPercentage;
+    }
+
+    public void setBoolShowPercentage(boolean showPercentage) {
+        this.showPercentage = showPercentage;
+    }
+
+    /**
+     * Toggles the visibility of the bank window.
+     */
+    public void toggleBankWindow() {
+        boolean isBankWindowVisible = bankWindow.isVisible();
+        bankWindow.setVisible(!isBankWindowVisible);
+        updateButtonStates();
+        layeredPane.revalidate();
+        layeredPane.repaint();
+    }
+
+    /**
+     * Updates the collections panel for the specified scene.
+     *
+     * @param scene the scene to update the collections panel for
+     */
+    private void updateCollectionsPanel(Scene scene) {
+        JPanel panel = collectionsPanels.get(scene.getDescription());
+        collectionsCardPanel.removeAll();
+        collectionsCardPanel.add(panel, scene.getDescription());
+
+        collectionsCardPanel.revalidate();
+        collectionsCardPanel.repaint();
+
+        // Ensure the scroll position is at the top
+        SwingUtilities.invokeLater(() -> collectionsScrollPane.getVerticalScrollBar().setValue(0));
     }
 }

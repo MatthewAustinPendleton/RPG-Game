@@ -3,21 +3,41 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * CustomPanel is a JPanel that displays a text with an optional image.
+ */
 public class CustomPanel extends JPanel {
     private String text;
     private Image image;
     private float opacity = 1.0f;
 
+    /**
+     * Constructs a CustomPanel with the specified text and image.
+     *
+     * @param text  the text to display
+     * @param image the image to display
+     */
     public CustomPanel(String text, Image image) {
         this.text = text;
         this.image = image;
         setOpaque(false); // Ensure the panel background is transparent
     }
 
+    /**
+     * Sets the opacity of the panel.
+     *
+     * @param opacity the opacity value (0.0 to 1.0)
+     */
     public void setOpacity(float opacity) {
         this.opacity = Math.max(0.0f, Math.min(1.0f, opacity)); // Ensure opacity is within the valid range
     }
 
+    /**
+     * Paints the component with custom rendering.
+     * This method draws the text with a shadow and the optional image.
+     *
+     * @param g the Graphics object used for painting
+     */
     @Override
     protected void paintComponent(Graphics g) {
         // Do not call super.paintComponent(g) to prevent the JPanel from drawing the background itself
@@ -57,6 +77,14 @@ public class CustomPanel extends JPanel {
         g2d.dispose();
     }
 
+    /**
+     * Splits the text into wrapped lines that fit within the specified width.
+     *
+     * @param text     the text to wrap
+     * @param fm       the FontMetrics to measure text width
+     * @param maxWidth the maximum width for each line
+     * @return a list of wrapped lines
+     */
     private List<String> getWrappedLines(String text, FontMetrics fm, int maxWidth) {
         List<String> lines = new ArrayList<>();
         StringBuilder line = new StringBuilder();
@@ -74,6 +102,14 @@ public class CustomPanel extends JPanel {
         return lines;
     }
 
+    /**
+     * Draws a shadow for the specified text at the given position.
+     *
+     * @param g2d  the Graphics2D object used for painting
+     * @param text the text to draw with a shadow
+     * @param x    the x-coordinate of the text position
+     * @param y    the y-coordinate of the text position
+     */
     private void drawTextShadow(Graphics2D g2d, String text, int x, int y) {
         g2d.setColor(Color.BLACK);
         g2d.drawString(text, x + 1, y + 1);

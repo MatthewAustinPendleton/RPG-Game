@@ -1,6 +1,9 @@
 import javax.swing.*;
 import java.util.*;
 
+/**
+ * Main class to start the Java GUI game.
+ */
 public class Main {
 
     public static List<Item> forestLootTable = new ArrayList<>();
@@ -17,7 +20,6 @@ public class Main {
             blackwidowspider, tarantula, dragonfly, bee, caterpillar, cricket, grovemint, ballofmoss, brambleberry,
             wildonion, dandeliongreen, wildcarrot, woodsorrel, cattailshoot, fiddleheadfern, hazelnut,
             wildasparagus, twinklingartichoke, moonlitfern, midnightleaf, twinklingberry, starflower, whisperingtreebark, caspianherb, whisperwoodblossom;
-
 
     public static void generateItemList() {
         apple = new Item("Apple", "/apple-transparent.png", 50, 20, 1);
@@ -55,10 +57,10 @@ public class Main {
         twigs = new Item("Twigs", "/twigs-transparent.png", 50, 21, 1);
         pinecone = new Item("Pinecone", "/pinecone-transparent.png", 50, 21, 1);
         wildrose = new Item("Wild Rose", "/wildrose-transparent.png", 50, 25, 1);
-        bluebell = new Item("Blue Bell", "bluebell-transparent.png", 50, 25, 1);
+        bluebell = new Item("Blue Bell", "/bluebell-transparent.png", 50, 25, 1);
         trillium = new Item("Trillium", "/trillium-transparent.png", 50, 25, 1);
-        woodanemone = new Item("Wood Anemone", "woodanemone-transparent.png", 50, 25, 1);
-        foxglove = new Item("Foxglove", "foxglove-transparent.png",50, 25,1);
+        woodanemone = new Item("Wood Anemone", "/woodanemone-transparent.png", 50, 25, 1);
+        foxglove = new Item("Foxglove", "/foxglove-transparent.png",50, 25,1);
         buttercup = new Item("Buttercup", "/buttercup-transparent.png", 50, 25, 1);
         violet = new Item("Violet","/violet-transparent.png", 50, 25, 1);
         daisy = new Item("Daisy", "/daisy-transparent.png", 50, 25, 1);
@@ -234,10 +236,10 @@ public class Main {
         List<String> whisperingThicketAdjacent = Collections.singletonList("forest clearing");
         List<String> bankAdjacent = Collections.singletonList("forest clearing");
 
-        Scene forest = new Scene("You are in a forest.", "/forestScene.png", forestAdjacent, forestLootTable, 1);
-        Scene forestClearing = new Scene("You are in a forest clearing.", "/forestClearing.png", forestClearingAdjacent, forestClearingLootTable, 2);
-        Scene bank = new Scene("You are in the bank.", "/bankScene.png", bankAdjacent, new ArrayList<>(), 0);
-        Scene whisperingThicket = new Scene("Quiet whispers mysteriously echo around you.", "/whisperingThicket.png", whisperingThicketAdjacent, whisperingThicketLootTable, 3);
+        Scene forest = new Scene("forest", "You are in a forest.", "/forestScene.png", forestAdjacent, forestLootTable, 1);
+        Scene forestClearing = new Scene("forest clearing", "You are in a forest clearing.", "/forestClearing.png", forestClearingAdjacent, forestClearingLootTable, 2);
+        Scene bank = new Scene("bank", "You are in the bank.", "/bankScene.png", bankAdjacent, new ArrayList<>(), 0);
+        Scene whisperingThicket = new Scene("whispering thicket", "Quiet whispers mysteriously echo around you.", "/whisperingThicket.png", whisperingThicketAdjacent, whisperingThicketLootTable, 3);
 
         scenes.put("forest", forest);
         scenes.put("forest clearing", forestClearing);

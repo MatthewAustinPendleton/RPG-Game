@@ -3,15 +3,28 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * LevelUpPanel is a custom panel that displays a level-up message with a fade-in and fade-out animation.
+ */
 public class LevelUpPanel extends JPanel {
     private String text;
     private float opacity = 0.0f; // Start with 0 opacity for fade-in effect
 
+    /**
+     * Constructs a LevelUpPanel with the specified text.
+     *
+     * @param text the text to display
+     */
     public LevelUpPanel(String text) {
         this.text = text;
         setOpaque(false); // Ensure the panel background is transparent
     }
 
+    /**
+     * Sets the opacity of the panel.
+     *
+     * @param opacity the opacity value (between 0.0 and 1.0)
+     */
     public void setOpacity(float opacity) {
         this.opacity = Math.max(0.0f, Math.min(1.0f, opacity)); // Ensure opacity is within the valid range
     }

@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
+/**
+ * ForagingManager handles the foraging process, including the timer, experience calculation,
+ * and animations for collected items.
+ */
 public class ForagingManager {
 
     private static final Logger LOGGER = Logger.getLogger(ForagingManager.class.getName());
@@ -23,7 +27,11 @@ public class ForagingManager {
     private long foragingExperience;
     private Clip forageSoundClip;
 
-    // ForagingManager constructor
+    /**
+     * Constructs a ForagingManager with the specified GameFrame.
+     *
+     * @param gameFrame the main game frame
+     */
     public ForagingManager(GameFrame gameFrame) {
         this.gameFrame = gameFrame;
         this.random = new Random();
@@ -35,6 +43,9 @@ public class ForagingManager {
         }
     }
 
+    /**
+     * Starts the foraging process.
+     */
     public synchronized void startForaging() {
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();
@@ -127,7 +138,7 @@ public class ForagingManager {
         boolean leveledUp = newLevel > foragingLevel;
 
         if (leveledUp) {
-            foragingExperience = ExperienceCalculator.calculateRemainingExperience(foragingExperience, newLevel);
+            foragingExperience -= ExperienceCalculator.getExperienceForLevel(newLevel);
             foragingLevel = newLevel;
             LOGGER.info("Leveled up! New Level: " + foragingLevel + " | Remaining Experience: " + foragingExperience + " | Next Level Experience: " + ExperienceCalculator.getExperienceForLevel(foragingLevel + 1));
         }
@@ -404,3 +415,4 @@ public class ForagingManager {
         animationTimer.start();
     }
 }
+

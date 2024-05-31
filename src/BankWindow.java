@@ -1,53 +1,65 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyVetoException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
-public class BankWindow extends JPanel {
-
-    private static final Logger LOGGER = Logger.getLogger(BankWindow.class.getName());
-
+/**
+ * BankWindow manages the banking system where players can deposit and withdraw items.
+ */
+public class BankWindow extends JInternalFrame {
     private GameFrame gameFrame;
+    private Map<String, Item> items;
     private JPanel bankPanel;
-    private Map<String, Item> bankInventory;
-    private Map<String, JPanel> itemPanels;
 
     public BankWindow(GameFrame gameFrame) {
+        super("Bank", true, true, true, true);
         this.gameFrame = gameFrame;
-        this.bankInventory = new HashMap<>();
-        this.itemPanels = new HashMap<>();
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        bankPanel = new JPanel();
-        bankPanel.setLayout(new GridLayout(0, 4, 5, 5)); // Use 0 for rows to allow vertical expansion
+        this.items = new HashMap<>();
+        this.bankPanel = new JPanel(new GridLayout(8, 3, 5, 5));
+        this.bankPanel.setBackground(Color.LIGHT_GRAY);
+
         JScrollPane scrollPane = new JScrollPane(bankPanel);
-        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); // Disable horizontal scrollbar
-        add(scrollPane, BorderLayout.CENTER);
+        getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+        setSize(600, 400);
+
+        // Add listener for closing the window
+        addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+            public void internalFrameClosing(javax.swing.event.InternalFrameEvent e) {
+                gameFrame.toggleBankWindow();
+            }
+        });
+    }
+
+    public void addItemToBank(Item item) {
+        if (items.containsKey(item.getName())) {
+            items.get(item.getName()).incrementCount(item.getCount());
+        } else {
+            items.put(item.getName(), item);
+        }
         refreshBankPanel();
     }
 
-    void refreshBankPanel() {
-        LOGGER.log(Level.INFO, "Refreshing bank panel...");
-        long startTime = System.currentTimeMillis();
-
-        bankPanel.removeAll();
-        for (Item item : bankInventory.values()) {
-            JPanel itemPanel = createItemPanel(item);
-            bankPanel.add(itemPanel);
+    public void depositAllItemsToBank() {
+        Inventory inventory = gameFrame.getInventory();
+        for (Item item : inventory.getItems()) {
+            addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
         }
+        inventory.clear();
+    }
+
+    public void refreshBankPanel() {
+        bankPanel.removeAll();
+
+        for (Item item : items.values()) {
+            bankPanel.add(createItemPanel(item));
+        }
+
         bankPanel.revalidate();
         bankPanel.repaint();
-
-        long endTime = System.currentTimeMillis();
-        LOGGER.log(Level.INFO, "Bank panel refreshed in " + (endTime - startTime) + " ms");
     }
 
     private JPanel createItemPanel(Item item) {
@@ -55,7 +67,7 @@ public class BankWindow extends JPanel {
         itemPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
         ImageIcon originalIcon = new ImageIcon(getClass().getResource(item.getIconPath()));
-        Image scaledImage = originalIcon.getImage().getScaledInstance(60, 60, Image.SCALE_SMOOTH);
+        Image scaledImage = originalIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         ImageIcon scaledIcon = new ImageIcon(scaledImage);
 
         JLabel iconLabel = new JLabel(scaledIcon, JLabel.CENTER);
@@ -71,118 +83,56 @@ public class BankWindow extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     showWithdrawMenu(e, item);
+                } else if (SwingUtilities.isLeftMouseButton(e)) {
+                    withdrawItemFromBank(item, item.getCount());
                 }
             }
         });
 
-        itemPanels.put(item.getName(), itemPanel);
         return itemPanel;
     }
 
     private void showWithdrawMenu(MouseEvent e, Item item) {
-        JPopupMenu withdrawMenu = new JPopupMenu();
+        JPopupMenu menu = new JPopupMenu();
+
         JMenuItem withdrawItem = new JMenuItem("Withdraw");
         JMenuItem withdrawAllItem = new JMenuItem("Withdraw All");
 
-        withdrawItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String countStr = JOptionPane.showInputDialog(gameFrame, "Enter amount to withdraw:", item.getCount());
-                if (countStr != null && !countStr.trim().isEmpty()) {
-                    try {
-                        int count = Integer.parseInt(countStr);
-                        if (count > 0 && count <= item.getCount()) {
-                            Item inventoryItem = new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), count);
-                            if (gameFrame.getInventory().addItem(inventoryItem)) {
-                                removeItemFromBank(item, count);
-                                refreshBankPanel();
-                                gameFrame.refreshInventoryPanel();
-                            } else {
-                                JOptionPane.showMessageDialog(gameFrame, "Inventory is full.");
-                            }
-                        } else {
-                            JOptionPane.showMessageDialog(gameFrame, "Invalid amount.");
-                        }
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(gameFrame, "Invalid input. Please enter a number.");
-                    }
-                }
-            }
-        });
-
-        withdrawAllItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int count = item.getCount();
-                Item inventoryItem = new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), count);
-                if (gameFrame.getInventory().addItem(inventoryItem)) {
-                    removeItemFromBank(item, count);
-                    refreshBankPanel();
-                    gameFrame.refreshInventoryPanel();
-                } else {
-                    JOptionPane.showMessageDialog(gameFrame, "Inventory is full.");
-                }
-            }
-        });
-
-        withdrawMenu.add(withdrawItem);
-        withdrawMenu.add(withdrawAllItem);
-        withdrawMenu.show(e.getComponent(), e.getX(), e.getY());
-    }
-
-    public void addItemToBank(Item item) {
-        LOGGER.log(Level.INFO, "Adding item to bank: " + item.getName() + " x" + item.getCount());
-        long startTime = System.currentTimeMillis();
-
-        if (bankInventory.containsKey(item.getName())) {
-            bankInventory.get(item.getName()).incrementCount(item.getCount());
-        } else {
-            bankInventory.put(item.getName(), item);
-        }
-        long endTime = System.currentTimeMillis();
-        LOGGER.log(Level.INFO, "Item added to bank inventory in " + (endTime - startTime) + " ms");
-    }
-
-    public void removeItemFromBank(Item item, int count) {
-        LOGGER.log(Level.INFO, "Removing item from bank: " + item.getName() + " x" + count);
-        long startTime = System.currentTimeMillis();
-
-        if (bankInventory.containsKey(item.getName())) {
-            Item bankItem = bankInventory.get(item.getName());
-            if (bankItem.getCount() > count) {
-                bankItem.decrementCount(count);
+        withdrawItem.addActionListener(e1 -> {
+            String countStr = JOptionPane.showInputDialog(gameFrame, "Enter amount to withdraw:", item.getCount());
+            int count = Integer.parseInt(countStr);
+            if (count > 0 && count <= item.getCount()) {
+                withdrawItemFromBank(item, count);
             } else {
-                bankInventory.remove(item.getName());
+                JOptionPane.showMessageDialog(gameFrame, "Invalid amount.");
             }
-        }
-        long endTime = System.currentTimeMillis();
-        LOGGER.log(Level.INFO, "Item removed from bank inventory in " + (endTime - startTime) + " ms");
+        });
+
+        withdrawAllItem.addActionListener(e1 -> {
+            withdrawItemFromBank(item, item.getCount());
+        });
+
+        menu.add(withdrawItem);
+        menu.add(withdrawAllItem);
+
+        menu.show(e.getComponent(), e.getX(), e.getY());
     }
 
-    // Method to deposit all items using a background thread to prevent UI lag
-    public void depositAllItemsToBank() {
-        LOGGER.log(Level.INFO, "Starting deposit all items to bank...");
-        long startTime = System.currentTimeMillis();
+    private void withdrawItemFromBank(Item item, int count) {
+        if (gameFrame.getInventory().isFull()) {
+            JOptionPane.showMessageDialog(this, "Inventory is full. Cannot withdraw items.");
+            return;
+        }
 
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() throws Exception {
-                for (Item item : new ArrayList<>(gameFrame.getInventory().getItems())) {
-                    addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
-                }
-                gameFrame.getInventory().clear();
-                return null;
-            }
+        Item bankItem = items.get(item.getName());
+        if (bankItem.getCount() > count) {
+            bankItem.decrementCount(count);
+        } else {
+            items.remove(item.getName());
+        }
 
-            @Override
-            protected void done() {
-                long endTime = System.currentTimeMillis();
-                LOGGER.log(Level.INFO, "Deposit all items to bank completed in " + (endTime - startTime) + " ms");
-
-                refreshBankPanel();
-                gameFrame.refreshInventoryPanel();
-            }
-        };
-        worker.execute();
+        gameFrame.getInventory().addItem(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), count));
+        refreshBankPanel();
+        gameFrame.refreshInventoryPanel();
     }
 }

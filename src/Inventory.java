@@ -4,6 +4,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 
+/**
+ * Inventory manages the items in the player's inventory and provides methods
+ * to add, remove, and display items.
+ */
 public class Inventory {
 
     private Map<String, Item> items;
@@ -12,11 +16,27 @@ public class Inventory {
     private int maxCapacity = 24;
     private GameFrame gameFrame;
 
+    /**
+     * Constructs an Inventory with the specified inventory panel and game frame.
+     *
+     * @param inventoryPanel the inventory panel
+     * @param gameFrame      the game frame
+     */
     public Inventory(JPanel inventoryPanel, GameFrame gameFrame) {
         this.items = new HashMap<>();
         this.inventoryPanel = inventoryPanel;
         this.slotItems = new HashMap<>();
         this.gameFrame = gameFrame;
+        initInventoryPanel();
+    }
+
+    /**
+     * Sets the slots panel to the specified panel.
+     *
+     * @param slotsPanel the slots panel
+     */
+    public void setSlotsPanel(JPanel slotsPanel) {
+        this.inventoryPanel = slotsPanel;
         initInventoryPanel();
     }
 
@@ -54,6 +74,12 @@ public class Inventory {
         return slot;
     }
 
+    /**
+     * Adds an item to the inventory.
+     *
+     * @param item the item to add
+     * @return true if the item was added successfully, false if the inventory is full
+     */
     public boolean addItem(Item item) {
         int emptySlot = findFirstEmptySlot();
         if (emptySlot == -1) {
@@ -94,6 +120,8 @@ public class Inventory {
                 if (count > 0 && count <= item.getCount()) {
                     bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), count));
                     removeItem(item, count);
+                    gameFrame.refreshInventoryPanel();
+                    bankWindow.refreshBankPanel();
                 } else {
                     JOptionPane.showMessageDialog(gameFrame, "Invalid amount.");
                 }
@@ -103,6 +131,8 @@ public class Inventory {
                 BankWindow bankWindow = gameFrame.getBankWindow();
                 bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
                 removeItem(item, item.getCount());
+                gameFrame.refreshInventoryPanel();
+                bankWindow.refreshBankPanel();
             });
 
             menu.add(depositItem);
@@ -116,6 +146,12 @@ public class Inventory {
         menu.show(e.getComponent(), e.getX(), e.getY());
     }
 
+    /**
+     * Removes the specified amount of an item from the inventory.
+     *
+     * @param item  the item to remove
+     * @param count the amount to remove
+     */
     public void removeItem(Item item, int count) {
         if (items.containsKey(item.getName())) {
             Item inventoryItem = items.get(item.getName());
@@ -129,14 +165,27 @@ public class Inventory {
         }
     }
 
+    /**
+     * Checks if the inventory is full.
+     *
+     * @return true if the inventory is full, false otherwise
+     */
     public boolean isFull() {
         return slotItems.size() >= maxCapacity;
     }
 
+    /**
+     * Returns the items in the inventory.
+     *
+     * @return a collection of items in the inventory
+     */
     public Collection<Item> getItems() {
         return new ArrayList<>(items.values());
     }
 
+    /**
+     * Refreshes the inventory panel to display the current items.
+     */
     public void refreshInventoryPanel() {
         inventoryPanel.removeAll();
         GridBagConstraints gbc = new GridBagConstraints();
@@ -200,6 +249,9 @@ public class Inventory {
         bankWindow.refreshBankPanel();
     }
 
+    /**
+     * Clears all items from the inventory.
+     */
     public void clear() {
         items.clear();
         slotItems.clear();
