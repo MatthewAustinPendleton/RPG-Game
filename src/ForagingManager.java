@@ -26,6 +26,8 @@ public class ForagingManager {
     private int foragingLevel;
     private long foragingExperience;
     private Clip forageSoundClip;
+    private SoundManager soundManager;
+    private boolean isForaging = false;
 
     /**
      * Constructs a ForagingManager with the specified GameFrame.
@@ -37,19 +39,26 @@ public class ForagingManager {
         this.random = new Random();
         this.foragingLevel = 1;
         this.foragingExperience = 0;
+        this.soundManager = new SoundManager();
 
         if (gameFrame.getForagingProgressBar() != null) {
             gameFrame.updateForagingProgressBar(foragingExperience, ExperienceCalculator.getExperienceForLevel(foragingLevel + 1));
         }
     }
 
+    public boolean getIsForagingBoolean() {
+        return isForaging;
+    }
+
     /**
      * Starts the foraging process.
      */
     public synchronized void startForaging() {
+        if (isForaging) return;
+        isForaging = true;
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();
-        playForagingSound();
+        soundManager.playSound("/foraging.wav");
         forageTimer = new Timer(getForagingTime(), new ForagingTimerListener());
         forageTimer.setRepeats(false);
         forageTimer.start();
@@ -119,9 +128,11 @@ public class ForagingManager {
     }
 
     private void endForaging() {
-        stopForagingSound();
+        soundManager.stopSound();
         gameFrame.enableMoveButton();
         gameFrame.enableForageButton();
+        System.out.println("Foraging ended, sound stopping...");
+        isForaging = false;
     }
 
     public int getForagingLevel() {
@@ -158,7 +169,7 @@ public class ForagingManager {
         gameFrame.updateForagingProgressBar(foragingExperience, finalExpNeeded);
         if (leveledUp) {
             gameFrame.updateForagingLevelLabel(foragingLevel);
-            playLevelUpSound();
+            soundManager.playSound("/foragingLevelUp.wav");
             gameFrame.showLevelUpMessage(foragingLevel);
             LOGGER.info("Level-up notification shown for level: " + foragingLevel);
         }
@@ -311,66 +322,12 @@ public class ForagingManager {
         animationTimer.start();
     }
 
-    public void playForagingSound() {
-        try {
-            URL soundURL = getClass().getResource("/foraging.wav");
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundURL);
-            forageSoundClip = AudioSystem.getClip();
-            forageSoundClip.open(audioStream);
-            forageSoundClip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     public void stopForagingSound() {
-        if (forageSoundClip != null && forageSoundClip.isRunning()) {
-            forageSoundClip.stop();
-            forageSoundClip.close();
-        }
+        soundManager.stopSound();
     }
 
     public void playCollectSound(int itemWeight) {
-        String soundPath;
-        if (itemWeight > 15) {
-            soundPath = "/collect.wav";
-        } else {
-            soundPath = "/specialCollect.wav";
-            playWowSound();
-        }
-        try {
-            URL soundURL = getClass().getResource(soundPath);
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundURL);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioInputStream);
-            clip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void playWowSound() {
-        try {
-            URL soundURL = getClass().getResource("/wow.wav");
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundURL);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioInputStream);
-            clip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void playLevelUpSound() {
-        try {
-            URL soundURL = getClass().getResource("/foragingLevelUp.wav");
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundURL);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioInputStream);
-            clip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-            ex.printStackTrace();
-        }
+        soundManager.playCollectSound(itemWeight);
     }
 
     private void showInventoryFullMessage() {

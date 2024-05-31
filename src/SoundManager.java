@@ -14,15 +14,28 @@ public class SoundManager {
      *
      * @param soundFilePath the path to the sound file to be played
      */
-    public void playSound(String soundFilePath) {
+    private void preloadSound(String soundFilePath) {
         try {
             URL soundURL = getClass().getResource(soundFilePath);
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundURL);
-            Clip audioClip = AudioSystem.getClip();
-            audioClip.open(audioInputStream);
-            audioClip.start();
-        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-            ex.printStackTrace();
+            forageSoundClip = AudioSystem.getClip();
+            forageSoundClip.open(audioInputStream);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public void playSound(String filePath) {
+        stopSound(); // Stop any currently playing sound
+
+        try {
+            if (forageSoundClip == null || !forageSoundClip.isOpen()) {
+                preloadSound(filePath); // Ensure the sound is preloaded
+            }
+            forageSoundClip.setFramePosition(0); // Reset to the start
+            forageSoundClip.start();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -53,6 +66,7 @@ public class SoundManager {
      * Stops the currently playing sound.
      */
     public void stopSound() {
+        System.out.println("Stopping the sound.");
         if (forageSoundClip != null && forageSoundClip.isRunning()) {
             forageSoundClip.stop();
             forageSoundClip.close();

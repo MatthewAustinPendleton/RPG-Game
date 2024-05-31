@@ -1,55 +1,62 @@
 import javax.swing.*;
 import java.awt.*;
 
-/**
- * Initializes the button panel of the game.
- */
 public class ButtonPanelInitializer {
 
     private GameFrame gameFrame;
+    private JPanel buttonPanel;
 
     public ButtonPanelInitializer(GameFrame gameFrame) {
         this.gameFrame = gameFrame;
     }
 
-    /**
-     * Initializes the button panel with the specified layered pane.
-     *
-     * @param layeredPane the layered pane to add the button panel to
-     */
     public void initButtonPanel(JLayeredPane layeredPane) {
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 4));
-        buttonPanel.setBounds(50, 680, 850, 50); // Adjusted position and size
-        buttonPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 5));
+        buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout());
 
         JButton moveButton = new JButton("Move");
-        moveButton.addActionListener(new MoveButtonListener(gameFrame));
-        System.out.println("Move button initialized.");
-
         JButton forageButton = new JButton("Forage");
-        forageButton.addActionListener(new ForageButtonListener(gameFrame.getForagingManager()));
-        System.out.println("Forage button initialized.");
-
         JButton bankButton = new JButton("Bank");
-        bankButton.addActionListener(e -> gameFrame.toggleBankWindow());
-        System.out.println("Bank button initialized.");
-
         JButton depositAllButton = new JButton("Deposit All");
-        depositAllButton.addActionListener(e -> gameFrame.getBankWindow().depositAllItemsToBank());
-        System.out.println("Deposit All button initialized.");
+
+        gameFrame.setMoveButton(moveButton);
+        gameFrame.setForageButton(forageButton);
+        gameFrame.setBankButton(bankButton);
+        gameFrame.setDepositAllButton(depositAllButton);
+
+        gameFrame.mainButtons.add(moveButton);
+        gameFrame.mainButtons.add(forageButton);
+        gameFrame.mainButtons.add(bankButton);
+        gameFrame.mainButtons.add(depositAllButton);
 
         buttonPanel.add(moveButton);
         buttonPanel.add(forageButton);
         buttonPanel.add(bankButton);
         buttonPanel.add(depositAllButton);
+        buttonPanel.add(gameFrame.selectionBox);
+
+        moveButton.addActionListener(e -> gameFrame.moveAction());
+        forageButton.addActionListener(e -> gameFrame.forageAction());
+        bankButton.addActionListener(e -> gameFrame.toggleBankWindow());
+        depositAllButton.addActionListener(e -> gameFrame.depositAllItemsToBank());
+
+        buttonPanel.setBounds(50, 700, 850, 50); // Adjust the bounds as necessary
+        buttonPanel.setBackground(Color.LIGHT_GRAY); // Set a background color to make it visible
 
         layeredPane.add(buttonPanel, JLayeredPane.DEFAULT_LAYER);
-        System.out.println("Button panel added to layeredPane.");
 
-        // Set buttons in GameFrame
-        gameFrame.setMoveButton(moveButton);
-        gameFrame.setForageButton(forageButton);
-        gameFrame.setBankButton(bankButton);
-        gameFrame.setDepositAllButton(depositAllButton);
+        // Ensure focus is on the button panel for key bindings to work
+        buttonPanel.setFocusable(true);
+        buttonPanel.requestFocusInWindow();
+
+        // Delay updating the selection box until the layout is complete
+        SwingUtilities.invokeLater(() -> gameFrame.updateSelectionBox());
+
+        System.out.println("ButtonPanel initialized and added to layeredPane");
+        System.out.println("ButtonPanel bounds: " + buttonPanel.getBounds());
+    }
+
+    public JPanel getButtonPanel() {
+        return buttonPanel;
     }
 }
