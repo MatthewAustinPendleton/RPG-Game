@@ -240,11 +240,13 @@ public class Main {
         Scene forestClearing = new Scene("forest clearing", "You are in a forest clearing.", "/forestClearing.png", forestClearingAdjacent, forestClearingLootTable, 2);
         Scene bank = new Scene("bank", "You are in the bank.", "/bankScene.png", bankAdjacent, new ArrayList<>(), 0);
         Scene whisperingThicket = new Scene("whispering thicket", "Quiet whispers mysteriously echo around you.", "/whisperingThicket.png", whisperingThicketAdjacent, whisperingThicketLootTable, 3);
+        Scene farm = new Scene("farm","You are at your farm.","/farmScene.png", new ArrayList<>(), new ArrayList<>(), 1);
 
         scenes.put("forest", forest);
         scenes.put("forest clearing", forestClearing);
         scenes.put("bank", bank);
         scenes.put("whispering thicket", whisperingThicket);
+        scenes.put("farm", farm);
 
         System.out.println("Scenes loaded: " + scenes.keySet());
 

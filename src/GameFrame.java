@@ -13,8 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.List;
-
-
+import java.util.ArrayList;
 
 public class GameFrame extends JFrame {
 
@@ -32,7 +31,7 @@ public class GameFrame extends JFrame {
     private JButton forageButton;
     private JButton bankButton;
     private JButton depositAllButton;
-    private JButton farmButton; // New Farm button
+    private JButton farmButton; // Added farmButton
     private ForagingManager foragingManager;
     private Map<String, Scene> scenes;
     private Scene currentScene;
@@ -47,7 +46,9 @@ public class GameFrame extends JFrame {
     private Set<String> discoveredItems;
     private Map<String, ImageIcon> preloadedImages;
     private JScrollPane collectionsScrollPane;
+    private int farmPlotAmount = 0; // Added farmPlotAmount
     boolean showPercentage = true;
+
 
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
@@ -85,7 +86,7 @@ public class GameFrame extends JFrame {
 
         // Initialize ButtonPanelInitializer and set the button panel
         this.buttonPanelInitializer = new ButtonPanelInitializer(this);
-        buttonPanelInitializer.initButtonPanel(layeredPane);  // Make sure this line is present
+        buttonPanelInitializer.initButtonPanel(layeredPane);  // Ensure this is added
 
         initKeyBindings(); // Ensure key bindings are initialized
 
@@ -152,11 +153,53 @@ public class GameFrame extends JFrame {
             System.out.println("Button: " + button.getText() + " Location: " + button.getLocation());
             System.out.println("Button: " + button.getText() + " Size: " + button.getSize());
         });
+
+        setFarmPlotAmount(0);
+
+        // Ensure the farm button visibility is updated based on farmPlotAmount
+        updateFarmButtonVisibility();
+
+        // Ensure the layout is validated and repainted
+        validate();
+        repaint();
+
+        // Call updateSelectionBox again after validation and repaint
+        SwingUtilities.invokeLater(this::updateSelectionBox);
     }
 
+
     public void moveAction() {
-        MoveButtonListener moveListener = new MoveButtonListener(this);
-        moveListener.actionPerformed(null); // Trigger the move action
+        Scene currentScene = getCurrentScene();
+        List<String> adjacentScenes = currentScene.getAdjacentScenes();
+
+        // Debug statements
+        System.out.println("Attempting to move from Scene: " + currentScene.getName());
+        System.out.println("Adjacent Scenes: " + adjacentScenes);
+
+        if (adjacentScenes.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No adjacent scenes available.");
+            return;
+        }
+
+        if (adjacentScenes.size() == 1) {
+            setCurrentScene(scenes.get(adjacentScenes.get(0)));
+        } else {
+            String nextSceneName = (String) JOptionPane.showInputDialog(
+                    this,
+                    "Select a scene to move to:",
+                    "Move",
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    adjacentScenes.toArray(),
+                    adjacentScenes.get(0)
+            );
+
+            if (nextSceneName != null && scenes.containsKey(nextSceneName)) {
+                setCurrentScene(scenes.get(nextSceneName));
+            } else {
+                JOptionPane.showMessageDialog(this, "Scene not found: " + nextSceneName);
+            }
+        }
     }
 
     public void forageAction() {
@@ -170,19 +213,16 @@ public class GameFrame extends JFrame {
         }
     }
 
-    public void farmAction() {
-        JOptionPane.showMessageDialog(this, "Welcome to your farm!");
-    }
-
     public void updateSelectionBox() {
         // Filter visible buttons
-        List<JButton> visibleButtons = mainButtons.stream()
+        java.util.List<JButton> visibleButtons = mainButtons.stream()
                 .filter(Component::isVisible)
                 .collect(Collectors.toList());
 
         if (visibleButtons.isEmpty()) return;
 
-        selectedButtonIndex = selectedButtonIndex % visibleButtons.size();
+        // Ensure the selectedButtonIndex is within the range of visible buttons
+        selectedButtonIndex = Math.min(selectedButtonIndex, visibleButtons.size() - 1);
         JButton selectedButton = visibleButtons.get(selectedButtonIndex);
         Rectangle bounds = selectedButton.getBounds();
         Point buttonLocation = SwingUtilities.convertPoint(selectedButton.getParent(), bounds.getLocation(), layeredPane);
@@ -193,23 +233,26 @@ public class GameFrame extends JFrame {
         System.out.println("SelectionBox updated to bounds: " + selectionBox.getBounds());
     }
 
-
     private void initKeyBindings() {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
 
         inputMap.put(KeyStroke.getKeyStroke("LEFT"), "moveLeft");
         inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
-        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectCurrentButton");
-        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectCurrentButton");
+        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectButton");
 
         actionMap.put("moveLeft", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                        .filter(Component::isVisible)
+                        .collect(Collectors.toList());
+                if (visibleButtons.isEmpty()) return;
                 if (selectedButtonIndex > 0) {
                     selectedButtonIndex--;
                 } else {
-                    selectedButtonIndex = mainButtons.size() - 1; // Wrap to the last button
+                    selectedButtonIndex = visibleButtons.size() - 1; // Wrap to the last button
                 }
                 updateSelectionBox();
             }
@@ -218,7 +261,11 @@ public class GameFrame extends JFrame {
         actionMap.put("moveRight", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (selectedButtonIndex < mainButtons.size() - 1) {
+                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                        .filter(Component::isVisible)
+                        .collect(Collectors.toList());
+                if (visibleButtons.isEmpty()) return;
+                if (selectedButtonIndex < visibleButtons.size() - 1) {
                     selectedButtonIndex++;
                 } else {
                     selectedButtonIndex = 0; // Wrap to the first button
@@ -227,13 +274,15 @@ public class GameFrame extends JFrame {
             }
         });
 
-        actionMap.put("selectCurrentButton", new AbstractAction() {
+        actionMap.put("selectButton", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!foragingManager.getIsForagingBoolean()) { // Only allow selection if not currently foraging
-                    JButton selectedButton = mainButtons.get(selectedButtonIndex);
-                    selectedButton.doClick();
-                }
+                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                        .filter(Component::isVisible)
+                        .collect(Collectors.toList());
+                if (visibleButtons.isEmpty()) return;
+                JButton selectedButton = visibleButtons.get(selectedButtonIndex);
+                selectedButton.doClick();
             }
         });
 
@@ -343,12 +392,7 @@ public class GameFrame extends JFrame {
 
     public void setCurrentScene(Scene scene) {
         currentScene = scene;
-        updateCollectionsPanel(scene);
-        updateButtonStates();
-        SwingUtilities.invokeLater(() -> {
-            selectedButtonIndex = 0; // Reset to the first button
-            updateSelectionBox();
-        });
+        updateScene();
     }
 
     public Map<String, Scene> getScenes() {
@@ -486,6 +530,12 @@ public class GameFrame extends JFrame {
         }
     }
 
+    public void disableFarmButton() {
+        if (farmButton != null) {
+            farmButton.setEnabled(false);
+        }
+    }
+
     public void disableForageButton() {
         if (forageButton != null) {
             forageButton.setEnabled(false);
@@ -534,18 +584,47 @@ public class GameFrame extends JFrame {
         fadeTimer.start();
     }
 
-    public BackgroundPanel getSceneImagePanel() {
-        return sceneImagePanel;
+    public void updateFarmButtonVisibility() {
+        boolean shouldShowFarmButton = farmPlotAmount > 0;
+        farmButton.setVisible(shouldShowFarmButton);
+        farmButton.setEnabled(shouldShowFarmButton);
+
+        // Debug prints
+        System.out.println("FarmButton visibility updated: " + farmButton.isVisible());
+        System.out.println("FarmButton enabled: " + farmButton.isEnabled());
+
+        // Ensure the selection box is updated
+        updateSelectionBox();
     }
 
-    public void addForagedItemToInventory(Item foragedItem) {
-        inventory.addItem(foragedItem);
-        refreshInventoryPanel();
+    private Image createShadowImage(Image originalImage) {
+        BufferedImage shadowImage = new BufferedImage(originalImage.getWidth(null), originalImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = shadowImage.createGraphics();
+        g2d.drawImage(originalImage, 0, 0, null);
+        g2d.setComposite(AlphaComposite.SrcIn);
+        g2d.setColor(new Color(0, 0, 0, 128));
+        g2d.fillRect(0, 0, originalImage.getWidth(null), originalImage.getHeight(null));
+        g2d.dispose();
+        return shadowImage;
+    }
+
+    private ImageIcon getPreloadedImage(String itemName) {
+        return preloadedImages.getOrDefault(itemName, new ImageIcon());
+    }
+
+    public Inventory getInventory() {
+        return inventory;
     }
 
     public void enableMoveButton() {
         if (moveButton != null) {
             moveButton.setEnabled(true);
+        }
+    }
+
+    public void enableFarmButton() {
+        if (farmButton != null) {
+            farmButton.setEnabled(true);
         }
     }
 
@@ -555,6 +634,15 @@ public class GameFrame extends JFrame {
         }
     }
 
+    public BackgroundPanel getSceneImagePanel() {
+        return sceneImagePanel;
+    }
+
+    public void addForagedItemToInventory(Item foragedItem) {
+        inventory.addItem(foragedItem);
+        refreshInventoryPanel();
+    }
+
     public void updateScene() {
         sceneImagePanel.setBackgroundImage(currentScene.getImagePath());
         sceneDescription.setText(currentScene.getDescription());
@@ -562,26 +650,13 @@ public class GameFrame extends JFrame {
         SwingUtilities.invokeLater(this::updateSelectionBox);
     }
 
-    private Image createShadowImage(Image originalImage) {
-        int width = originalImage.getWidth(null);
-        int height = originalImage.getHeight(null);
-        BufferedImage shadowImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-        Graphics2D g2d = shadowImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, null);
-        g2d.setComposite(AlphaComposite.SrcAtop);
-        g2d.setColor(Color.BLACK);
-        g2d.fillRect(0, 0, width, height);
-        g2d.dispose();
-
-        return shadowImage;
+    public void setFarmPlotAmount(int amount) {
+        this.farmPlotAmount = amount;
+        updateFarmButtonVisibility();
     }
 
-    private ImageIcon getPreloadedImage(String itemName) {
-        return preloadedImages.get(itemName);
-    }
-
-    public Inventory getInventory() {
-        return inventory;
+    public void incrementFarmPlotAmount() {
+        this.farmPlotAmount++;
+        updateFarmButtonVisibility();
     }
 }

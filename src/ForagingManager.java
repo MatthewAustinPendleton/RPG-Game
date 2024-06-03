@@ -58,6 +58,7 @@ public class ForagingManager {
         isForaging = true;
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();
+        gameFrame.disableFarmButton();
         soundManager.playSound("/foraging.wav");
         forageTimer = new Timer(getForagingTime(), new ForagingTimerListener());
         forageTimer.setRepeats(false);
@@ -131,6 +132,7 @@ public class ForagingManager {
         soundManager.stopSound();
         gameFrame.enableMoveButton();
         gameFrame.enableForageButton();
+        gameFrame.enableFarmButton();
         System.out.println("Foraging ended, sound stopping...");
         isForaging = false;
     }
@@ -142,6 +144,8 @@ public class ForagingManager {
     public long getForagingExperience() {
         return foragingExperience;
     }
+
+
 
     private synchronized void gainForagingExperience(int exp) {
         foragingExperience += exp;

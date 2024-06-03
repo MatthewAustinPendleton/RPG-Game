@@ -42,10 +42,6 @@ public class Scene {
         return imagePath;
     }
 
-    public List<String> getAdjacentScenes() {
-        return adjacentScenes;
-    }
-
     public List<Item> getLootTable() {
         return lootTable;
     }
@@ -53,4 +49,18 @@ public class Scene {
     public int getDifficulty() {
         return difficulty;
     }
+
+    public void setAdjacentScenes(List<String> adjacentScenes) {
+        this.adjacentScenes = adjacentScenes;
+    }
+
+    public List<String> getAdjacentScenes() {
+        return adjacentScenes;
+    }
+
+    @Override
+    public String toString() {
+        return "Scene{name='" + name + "', adjacentScenes=" + adjacentScenes + "}";
+    }
+
 }
