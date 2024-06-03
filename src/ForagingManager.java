@@ -372,4 +372,3 @@ public class ForagingManager {
         animationTimer.start();
     }
 }
-

@@ -12,6 +12,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.List;
+
+
 
 public class GameFrame extends JFrame {
 
@@ -29,6 +32,7 @@ public class GameFrame extends JFrame {
     private JButton forageButton;
     private JButton bankButton;
     private JButton depositAllButton;
+    private JButton farmButton; // New Farm button
     private ForagingManager foragingManager;
     private Map<String, Scene> scenes;
     private Scene currentScene;
@@ -166,9 +170,13 @@ public class GameFrame extends JFrame {
         }
     }
 
+    public void farmAction() {
+        JOptionPane.showMessageDialog(this, "Welcome to your farm!");
+    }
+
     public void updateSelectionBox() {
         // Filter visible buttons
-        java.util.List<JButton> visibleButtons = mainButtons.stream()
+        List<JButton> visibleButtons = mainButtons.stream()
                 .filter(Component::isVisible)
                 .collect(Collectors.toList());
 
@@ -185,14 +193,15 @@ public class GameFrame extends JFrame {
         System.out.println("SelectionBox updated to bounds: " + selectionBox.getBounds());
     }
 
+
     private void initKeyBindings() {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
 
         inputMap.put(KeyStroke.getKeyStroke("LEFT"), "moveLeft");
         inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
-        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectButton");
-        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectCurrentButton");
+        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectCurrentButton");
 
         actionMap.put("moveLeft", new AbstractAction() {
             @Override
@@ -218,7 +227,7 @@ public class GameFrame extends JFrame {
             }
         });
 
-        actionMap.put("selectButton", new AbstractAction() {
+        actionMap.put("selectCurrentButton", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!foragingManager.getIsForagingBoolean()) { // Only allow selection if not currently foraging
@@ -256,6 +265,11 @@ public class GameFrame extends JFrame {
     public void setDepositAllButton(JButton depositAllButton) {
         this.depositAllButton = depositAllButton;
         System.out.println("DepositAllButton set with Bounds: " + depositAllButton.getBounds());
+    }
+
+    public void setFarmButton(JButton farmButton) {
+        this.farmButton = farmButton;
+        System.out.println("FarmButton set with Bounds: " + farmButton.getBounds());
     }
 
     public void updateButtonStates() {
@@ -384,7 +398,6 @@ public class GameFrame extends JFrame {
     public void setForagingProgressBar(JProgressBar foragingProgressBar) {
         this.foragingProgressBar = foragingProgressBar;
     }
-
 
     public void setTabbedPane(JTabbedPane tabbedPane) {
         this.tabbedPane = tabbedPane;
