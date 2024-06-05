@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -6,14 +7,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class GameFrame extends JFrame {
 
@@ -88,6 +84,29 @@ public class GameFrame extends JFrame {
         this.buttonPanelInitializer = new ButtonPanelInitializer(this);
         buttonPanelInitializer.initButtonPanel(layeredPane);  // Ensure this is added
 
+        // Initialize buttons before calling updateButtonStates
+        if (moveButton == null) {
+            System.err.println("MoveButton is not initialized before setting.");
+        }
+        if (forageButton == null) {
+            System.err.println("ForageButton is not initialized before setting.");
+        }
+        if (bankButton == null) {
+            System.err.println("BankButton is not initialized before setting.");
+        }
+        if (depositAllButton == null) {
+            System.err.println("DepositAllButton is not initialized before setting.");
+        }
+        if (farmButton == null) {
+            System.err.println("FarmButton is not initialized before setting.");
+        }
+
+        mainButtons.add(moveButton);
+        mainButtons.add(forageButton);
+        mainButtons.add(bankButton);
+        mainButtons.add(depositAllButton);
+        mainButtons.add(farmButton);
+
         initKeyBindings(); // Ensure key bindings are initialized
 
         bankWindow = new BankWindow(this);
@@ -143,7 +162,7 @@ public class GameFrame extends JFrame {
             }
         });
 
-        updateSelectionBox();
+        updateSelectionBox(mainButtons);
 
         // Debug prints
         System.out.println("GameFrame initialized!");
@@ -164,7 +183,7 @@ public class GameFrame extends JFrame {
         repaint();
 
         // Call updateSelectionBox again after validation and repaint
-        SwingUtilities.invokeLater(this::updateSelectionBox);
+        SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons));
     }
 
     public void drawFarmPlots(int farmPlotAmount) {
@@ -284,26 +303,6 @@ public class GameFrame extends JFrame {
         }
     }
 
-    public void updateSelectionBox() {
-        // Filter visible buttons
-        java.util.List<JButton> visibleButtons = mainButtons.stream()
-                .filter(Component::isVisible)
-                .collect(Collectors.toList());
-
-        if (visibleButtons.isEmpty()) return;
-
-        // Ensure the selectedButtonIndex is within the range of visible buttons
-        selectedButtonIndex = Math.min(selectedButtonIndex, visibleButtons.size() - 1);
-        JButton selectedButton = visibleButtons.get(selectedButtonIndex);
-        Rectangle bounds = selectedButton.getBounds();
-        Point buttonLocation = SwingUtilities.convertPoint(selectedButton.getParent(), bounds.getLocation(), layeredPane);
-        selectionBox.setBounds(buttonLocation.x - 2, buttonLocation.y - 2, bounds.width + 4, bounds.height + 4);
-        getLayeredPane().repaint();
-
-        // Debug prints
-        System.out.println("SelectionBox updated to bounds: " + selectionBox.getBounds());
-    }
-
     private void initKeyBindings() {
         InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         ActionMap actionMap = getRootPane().getActionMap();
@@ -318,6 +317,7 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 java.util.List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 if (selectedButtonIndex > 0) {
@@ -325,7 +325,7 @@ public class GameFrame extends JFrame {
                 } else {
                     selectedButtonIndex = visibleButtons.size() - 1; // Wrap to the last button
                 }
-                updateSelectionBox();
+                updateSelectionBox(visibleButtons);
             }
         });
 
@@ -334,6 +334,7 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 java.util.List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 if (selectedButtonIndex < visibleButtons.size() - 1) {
@@ -341,7 +342,7 @@ public class GameFrame extends JFrame {
                 } else {
                     selectedButtonIndex = 0; // Wrap to the first button
                 }
-                updateSelectionBox();
+                updateSelectionBox(visibleButtons);
             }
         });
 
@@ -350,6 +351,7 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 java.util.List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 JButton selectedButton = visibleButtons.get(selectedButtonIndex);
@@ -364,6 +366,21 @@ public class GameFrame extends JFrame {
 
         // Debug prints
         System.out.println("Key bindings initialized!");
+    }
+
+    public void updateSelectionBox(java.util.List<JButton> visibleButtons) {
+        if (visibleButtons.isEmpty()) return;
+
+        // Ensure the selectedButtonIndex is within the range of visible buttons
+        selectedButtonIndex = Math.min(selectedButtonIndex, visibleButtons.size() - 1);
+        JButton selectedButton = visibleButtons.get(selectedButtonIndex);
+        Rectangle bounds = selectedButton.getBounds();
+        Point buttonLocation = SwingUtilities.convertPoint(selectedButton.getParent(), bounds.getLocation(), layeredPane);
+        selectionBox.setBounds(buttonLocation.x - 2, buttonLocation.y - 2, bounds.width + 4, bounds.height + 4);
+        getLayeredPane().repaint();
+
+        // Debug prints
+        System.out.println("SelectionBox updated to bounds: " + selectionBox.getBounds());
     }
 
     public void setMoveButton(JButton moveButton) {
@@ -392,32 +409,79 @@ public class GameFrame extends JFrame {
     }
 
     public void updateButtonStates() {
-        boolean isBankScene = "You are in the bank.".equals(currentScene.getDescription());
-        boolean isBankWindowVisible = bankWindow.isVisible();
-        boolean isFarmScene = "You are at your farm.".equals(currentScene.getDescription());
-
-        bankButton.setVisible(isBankScene);
-        forageButton.setEnabled(!isBankScene);
-        moveButton.setEnabled(!isBankWindowVisible);
-        farmButton.setVisible(!isFarmScene);
-        forageButton.setVisible(!isFarmScene);
-
-        if (isBankScene) {
-            bankButton.setEnabled(true);
-            depositAllButton.setVisible(true);
-        } else {
-            depositAllButton.setVisible(false);
+        // Ensure currentScene is not null
+        if (currentScene == null) {
+            System.err.println("Error: currentScene is null.");
+            return;
         }
 
-        buttonPanelInitializer.getButtonPanel().revalidate();
-        buttonPanelInitializer.getButtonPanel().repaint();
+        boolean isBankScene = "You are in the bank.".equals(currentScene.getDescription());
+        boolean isBankWindowVisible = bankWindow != null && bankWindow.isVisible();
+        boolean isFarmScene = "You are at your farm.".equals(currentScene.getDescription());
+
+        if (bankButton == null) {
+            System.err.println("Error: bankButton is null.");
+        } else {
+            bankButton.setVisible(isBankScene);
+        }
+
+        if (forageButton == null) {
+            System.err.println("Error: forageButton is null.");
+        } else {
+            forageButton.setEnabled(!isBankScene);
+            forageButton.setVisible(!isFarmScene);
+        }
+
+        if (moveButton == null) {
+            System.err.println("Error: moveButton is null.");
+        } else {
+            moveButton.setEnabled(!isBankWindowVisible);
+        }
+
+        if (farmButton == null) {
+            System.err.println("Error: farmButton is null.");
+        } else {
+            farmButton.setVisible(!isFarmScene);
+        }
+
+        if (depositAllButton == null) {
+            System.err.println("Error: depositAllButton is null.");
+        } else {
+            if (isBankScene) {
+                depositAllButton.setVisible(true);
+            } else {
+                depositAllButton.setVisible(false);
+            }
+        }
+
+        // Ensure buttonPanel is not null
+        JPanel buttonPanel = buttonPanelInitializer.getButtonPanel();
+        if (buttonPanel == null) {
+            System.err.println("Error: buttonPanel is null.");
+        } else {
+            buttonPanel.revalidate();
+            buttonPanel.repaint();
+        }
 
         // Debug prints
         System.out.println("Button states updated!");
-        System.out.println("BankButton visible: " + bankButton.isVisible());
-        System.out.println("ForageButton enabled: " + forageButton.isEnabled());
-        System.out.println("MoveButton enabled: " + moveButton.isEnabled());
-        System.out.println("DepositAllButton visible: " + depositAllButton.isVisible());
+        if (bankButton != null) {
+            System.out.println("BankButton visible: " + bankButton.isVisible());
+        }
+        if (forageButton != null) {
+            System.out.println("ForageButton enabled: " + forageButton.isEnabled());
+        }
+        if (moveButton != null) {
+            System.out.println("MoveButton enabled: " + moveButton.isEnabled());
+        }
+        if (depositAllButton != null) {
+            System.out.println("DepositAllButton visible: " + depositAllButton.isVisible());
+        }
+        if (farmButton != null) {
+            System.out.println("FarmButton visible: " + farmButton.isVisible());
+        }
+
+        updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList()));
     }
 
     private void preloadImages() {
@@ -586,7 +650,7 @@ public class GameFrame extends JFrame {
         boolean isBankWindowVisible = bankWindow.isVisible();
         bankWindow.setVisible(!isBankWindowVisible);
         updateButtonStates();
-        SwingUtilities.invokeLater(this::updateSelectionBox);
+        SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList())));
     }
 
     public void revealCollectedItem(Item item) {
@@ -726,7 +790,7 @@ public class GameFrame extends JFrame {
         System.out.println("FarmPlotAmount: " + farmPlotAmount);
 
         // Ensure the selection box is updated
-        updateSelectionBox();
+        updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList()));
     }
 
     private Image createShadowImage(Image originalImage) {
@@ -779,7 +843,7 @@ public class GameFrame extends JFrame {
         sceneImagePanel.setBackgroundImage(currentScene.getImagePath());
         sceneDescription.setText(currentScene.getDescription());
         updateButtonStates();
-        SwingUtilities.invokeLater(this::updateSelectionBox);
+        SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList())));
 
         // Debug statement
         System.out.println("Scene updated to: " + currentScene.getName());

@@ -1,11 +1,6 @@
 public class ToAdd {
     /**
      * To add:
-     * 0) Fix the Collections tab.
-     * Hey, so I just noticed that the Collections tab is all greyed out, and it doesn't change depending on the current
-     * scene's loot table, which is how I coded it. Can you fix the Collections tab so that the pixels aren't grey-ish but
-     * completely black when the item is hidden, and then when the item is obtained, it reveals the item so to speak. But also fix
-     * the updating of the collection tab so when you change scene, the collections tab updates.
      * 1) Resolve the issue of "the more items you add to the inventory, the more lag occurs whenever you collect a new item."
      * 2) Resolve the issue of "the more items in your inventory, the more it lags when you press Deposit All in the bank scene."
      * 4) Style the farm plot panel until it looks nice.
