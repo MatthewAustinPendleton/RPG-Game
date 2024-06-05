@@ -1,7 +1,7 @@
 public class ToAdd {
     /**
      * To add:
-     * 1) Resolve the issue of "the more items you add to the inventory, the more lag occurs whenever you collect a new item."
+     * 0) No adjacent scenes issue in Farm scene, needs to remember which scene you were in and take you back there.
      * 2) Resolve the issue of "the more items in your inventory, the more it lags when you press Deposit All in the bank scene."
      * 4) Style the farm plot panel until it looks nice.
      * 5) Style the buttons so that everything looks as intended.

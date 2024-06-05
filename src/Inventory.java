@@ -92,6 +92,8 @@ public class Inventory {
             items.put(item.getName(), item);
             slotItems.put(emptySlot, item);
         }
+
+        // Batch update UI after adding all items
         refreshInventoryPanel();
         return true;
     }
@@ -184,6 +186,18 @@ public class Inventory {
     }
 
     /**
+     * Clears the inventory by removing all items.
+     */
+    public void clear() {
+        items.clear();
+        slotItems.clear();
+        refreshInventoryPanel();
+
+        // Debugging output
+        System.out.println("Inventory cleared.");
+    }
+
+    /**
      * Refreshes the inventory panel to display the current items.
      */
     public void refreshInventoryPanel() {
@@ -246,15 +260,20 @@ public class Inventory {
         BankWindow bankWindow = gameFrame.getBankWindow();
         bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
         removeItem(item, item.getCount());
+        gameFrame.refreshInventoryPanel();
         bankWindow.refreshBankPanel();
     }
 
     /**
-     * Clears all items from the inventory.
+     * Handles item deposit to the bank.
+     *
+     * @param item the item to deposit
      */
-    public void clear() {
-        items.clear();
-        slotItems.clear();
-        refreshInventoryPanel();
+    public void handleItemDepositToBank(Item item) {
+        BankWindow bankWindow = gameFrame.getBankWindow();
+        bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
+        removeItem(item, item.getCount());
+        gameFrame.refreshInventoryPanel();
+        bankWindow.refreshBankPanel();
     }
 }

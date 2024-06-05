@@ -113,6 +113,7 @@ public class ForagingManager {
             return;
         }
 
+        long startTime = System.nanoTime();
         int expGained = foragedItem.getExperience();
         Item singleForagedItem = new Item(foragedItem.getName(), foragedItem.getIconPath(), foragedItem.getWeight(), expGained, foragedItem.getLevelRequirement(), 1);
         animateForagedItem(singleForagedItem, () -> {
@@ -121,6 +122,8 @@ public class ForagingManager {
             gameFrame.revealCollectedItem(singleForagedItem); // Reveal item in collections
             endForaging();
         });
+        long endTime = System.nanoTime();
+        System.out.println("Foraged item handled in: " + (endTime - startTime) / 1_000_000 + " ms.");
     }
 
     private double calculateProgress() {
