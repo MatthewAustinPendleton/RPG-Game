@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
@@ -27,7 +26,7 @@ public class GameFrame extends JFrame {
     private JButton forageButton;
     private JButton bankButton;
     private JButton depositAllButton;
-    private JButton farmButton; // Added farmButton
+    private JButton farmButton;
     private ForagingManager foragingManager;
     private Map<String, Scene> scenes;
     private Scene currentScene;
@@ -42,7 +41,7 @@ public class GameFrame extends JFrame {
     private Set<String> discoveredItems;
     private Map<String, ImageIcon> preloadedImages;
     private JScrollPane collectionsScrollPane;
-    private int farmPlotAmount = 10; // Added farmPlotAmount
+    private int farmPlotAmount = 10;
     boolean showPercentage = true;
     private int currentFarmPage = 0;
     private Scene previousScene;
@@ -50,7 +49,7 @@ public class GameFrame extends JFrame {
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
         this.currentScene = scenes.get("forest");
-        this.previousScene = this.currentScene;
+        this.previousScene = null; // Start with no previous scene
         this.discoveredItems = new HashSet<>();
         this.collectionsPanels = new HashMap<>();
 
@@ -64,7 +63,7 @@ public class GameFrame extends JFrame {
 
         // Set up the JFrame
         setTitle("Java GUI Game");
-        setSize(1400, 800);  // Increased width for more space
+        setSize(1400, 800);
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -84,7 +83,7 @@ public class GameFrame extends JFrame {
 
         // Initialize ButtonPanelInitializer and set the button panel
         this.buttonPanelInitializer = new ButtonPanelInitializer(this);
-        buttonPanelInitializer.initButtonPanel(layeredPane);  // Ensure this is added
+        buttonPanelInitializer.initButtonPanel(layeredPane);
 
         // Initialize buttons before calling updateButtonStates
         if (moveButton == null) {
@@ -213,7 +212,7 @@ public class GameFrame extends JFrame {
         // Add farm plots to the farmPanel
         for (int i = startPlot; i < endPlot; i++) {
             int plotIndex = i - startPlot;
-            int x = xOffset + (plotIndex % gridWidth) * (plotSize + horizontalGap); // Added more horizontal spacing
+            int x = xOffset + (plotIndex % gridWidth) * (plotSize + horizontalGap);
             int y = yOffset + (plotIndex / gridWidth) * plotSize;
             JLabel plotLabel = new JLabel();
             plotLabel.setBounds(x, y, plotSize, plotSize);
@@ -265,7 +264,6 @@ public class GameFrame extends JFrame {
         System.out.println("Current Scene: " + currentScene.getName());
         List<String> adjacentScenes = currentScene.getAdjacentScenes();
 
-        // Debug statements
         System.out.println("Attempting to move from Scene: " + currentScene.getName());
         System.out.println("Adjacent Scenes: " + adjacentScenes);
         System.out.println("Previous Scene: " + (previousScene != null ? previousScene.getName() : "null"));
@@ -274,11 +272,10 @@ public class GameFrame extends JFrame {
             if (previousScene != null) {
                 System.out.println("Returning to previous scene: " + previousScene.getName());
                 setCurrentScene(previousScene);
-                previousScene = null; // Clear previousScene after moving back
+                return;  // Exit early since we've handled the farm move
             } else {
                 System.out.println("Error: previousScene is null.");
             }
-            return;
         }
 
         if (adjacentScenes.isEmpty()) {
@@ -287,7 +284,7 @@ public class GameFrame extends JFrame {
         }
 
         if (adjacentScenes.size() == 1) {
-            previousScene = currentScene; // Set previousScene before moving
+            previousScene = currentScene;  // Set previousScene before moving
             System.out.println("Setting previousScene to: " + previousScene.getName());
             setCurrentScene(scenes.get(adjacentScenes.get(0)));
         } else {
@@ -302,7 +299,7 @@ public class GameFrame extends JFrame {
             );
 
             if (nextSceneName != null && scenes.containsKey(nextSceneName)) {
-                previousScene = currentScene; // Set previousScene before moving
+                previousScene = currentScene;  // Set previousScene before moving
                 System.out.println("Setting previousScene to: " + previousScene.getName());
                 setCurrentScene(scenes.get(nextSceneName));
             } else {
@@ -310,6 +307,8 @@ public class GameFrame extends JFrame {
             }
         }
     }
+
+
 
     public void forageAction() {
         ForageButtonListener forageListener = new ForageButtonListener(foragingManager);
@@ -496,7 +495,6 @@ public class GameFrame extends JFrame {
         if (farmButton != null) {
             System.out.println("FarmButton visible: " + farmButton.isVisible());
         }
-
         updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList()));
     }
 
@@ -549,11 +547,10 @@ public class GameFrame extends JFrame {
     public void setCurrentScene(Scene scene) {
         System.out.println("Setting current scene. Current: " + (currentScene != null ? currentScene.getName() : "null") + ", New: " + scene.getName());
 
+        // Always set previousScene before changing the current scene
         if (currentScene != null && !currentScene.getName().equals(scene.getName())) {
-            if (!"farm".equals(scene.getName())) {
-                previousScene = currentScene; // Set previousScene before changing to any other scene
-                System.out.println("Setting previousScene to: " + previousScene.getName());
-            }
+            previousScene = currentScene;
+            System.out.println("Setting previousScene to: " + previousScene.getName());
         }
 
         System.out.println("Changing current scene to: " + scene.getName());
@@ -561,14 +558,17 @@ public class GameFrame extends JFrame {
         currentScene = scene;
         updateScene();
         System.out.println("Updated current scene to: " + currentScene.getName());
+
         if ("farm".equals(scene.getName())) {
             drawFarmPlots(farmPlotAmount);
         }
-        updateButtonStates(); // Update button states after changing the scene
-        updateCollectionsPanel(currentScene); // Update collections panel based on the current scene
+
+        updateButtonStates();
+        updateCollectionsPanel(currentScene);
         validate();
         repaint();
     }
+
 
     public void clearFarmElements() {
         System.out.println("Clearing farm elements...");
@@ -757,6 +757,78 @@ public class GameFrame extends JFrame {
         }
     }
 
+    public void disableBankButton() {
+        if (bankButton != null) {
+            bankButton.setEnabled(false);
+        }
+    }
+
+    public ImageIcon getPreloadedImage(String itemName) {
+        return preloadedImages.getOrDefault(itemName, null);
+    }
+
+    public void setFarmPlotAmount(int farmPlotAmount) {
+        this.farmPlotAmount = farmPlotAmount;
+        updateFarmButtonVisibility(); // Ensure the farm button visibility is updated
+    }
+
+    void updateFarmButtonVisibility() {
+        if (farmButton != null) {
+            farmButton.setVisible(farmPlotAmount > 0);
+        }
+    }
+
+    public void refreshUI() {
+        if (bankWindow != null && bankWindow.isVisible()) {
+            refreshInventoryPanel();
+        }
+        refreshInventoryPanel();
+        updateButtonStates();
+        validate();
+        repaint();
+    }
+
+    public JPanel getSceneImagePanel() {
+        return sceneImagePanel;
+    }
+
+    public void updateScene() {
+        if (sceneImagePanel != null && currentScene != null) {
+            sceneImagePanel.setBackgroundImage(currentScene.getImagePath());
+        }
+        if (sceneDescription != null && currentScene != null) {
+            sceneDescription.setText(currentScene.getDescription());
+        }
+        updateButtonStates();
+        SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons.stream()
+                .filter(Component::isVisible)
+                .sorted(Comparator.comparingInt(b -> b.getLocation().x))
+                .collect(Collectors.toList())));
+        System.out.println("Scene updated to: " + currentScene.getName());
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public void enableMoveButton() {
+        if (moveButton != null) {
+            moveButton.setEnabled(true);
+        }
+    }
+
+    public void enableForageButton() {
+        if (forageButton != null) {
+            forageButton.setEnabled(true);
+        }
+    }
+
+    public void enableFarmButton() {
+        if (farmButton != null) {
+            farmButton.setEnabled(true);
+        }
+    }
+
     public void showLevelUpMessage(int newLevel) {
         LevelUpPanel levelUpPanel = new LevelUpPanel("Congratulations! You reached level " + newLevel + "!");
         levelUpPanel.setSize(400, 100);
@@ -799,94 +871,14 @@ public class GameFrame extends JFrame {
         fadeTimer.start();
     }
 
-    public void updateFarmButtonVisibility() {
-        if (farmButton == null) {
-            System.err.println("FarmButton is null.");
-            return;
-        }
-
-        boolean shouldShowFarmButton = farmPlotAmount > 0;
-        farmButton.setVisible(shouldShowFarmButton);
-        farmButton.setEnabled(shouldShowFarmButton);
-
-        // Debug prints
-        System.out.println("FarmButton visibility updated: " + farmButton.isVisible());
-        System.out.println("FarmButton enabled: " + farmButton.isEnabled());
-        System.out.println("FarmPlotAmount: " + farmPlotAmount);
-
-        // Ensure the selection box is updated
-        updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList()));
-    }
-
-    private Image createShadowImage(Image originalImage) {
-        BufferedImage shadowImage = new BufferedImage(originalImage.getWidth(null), originalImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = shadowImage.createGraphics();
-        g2d.drawImage(originalImage, 0, 0, null);
-        g2d.setComposite(AlphaComposite.SrcIn);
-        g2d.setColor(new Color(0, 0, 0, 128));
-        g2d.fillRect(0, 0, originalImage.getWidth(null), originalImage.getHeight(null));
-        g2d.dispose();
-        return shadowImage;
-    }
-
-    private ImageIcon getPreloadedImage(String itemName) {
-        return preloadedImages.getOrDefault(itemName, new ImageIcon());
-    }
-
-    public Inventory getInventory() {
-        return inventory;
-    }
-
-    public void enableMoveButton() {
-        if (moveButton != null) {
-            moveButton.setEnabled(true);
-        }
-    }
-
-    public void enableFarmButton() {
-        if (farmButton != null) {
-            farmButton.setEnabled(true);
-        }
-    }
-
-    public void enableForageButton() {
-        if (forageButton != null) {
-            forageButton.setEnabled(true);
-        }
-    }
-
-    public BackgroundPanel getSceneImagePanel() {
-        return sceneImagePanel;
-    }
-
     public void addForagedItemToInventory(Item foragedItem) {
-        inventory.addItem(foragedItem);
-        refreshInventoryPanel();
-    }
-
-    public void updateScene() {
-        sceneImagePanel.setBackgroundImage(currentScene.getImagePath());
-        sceneDescription.setText(currentScene.getDescription());
-        updateButtonStates();
-        SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons.stream().filter(Component::isVisible).sorted(Comparator.comparingInt(b -> b.getLocation().x)).collect(Collectors.toList())));
-
-        // Debug statement
-        System.out.println("Scene updated to: " + currentScene.getName());
-
-        // Draw farm plots only if the current scene is the farm
-        if ("farm".equals(currentScene.getName())) {
-            drawFarmPlots(farmPlotAmount);
+        if (inventory.addItem(foragedItem)) {
+            refreshInventoryPanel();
+        } else {
+            JOptionPane.showMessageDialog(this, "Inventory is full. Cannot add foraged item.");
         }
     }
 
-
-    public void setFarmPlotAmount(int amount) {
-        this.farmPlotAmount = amount;
-        updateFarmButtonVisibility();
-    }
-
-    public void incrementFarmPlotAmount() {
-        this.farmPlotAmount++;
-        updateFarmButtonVisibility();
-    }
 }
+
+
