@@ -1,14 +1,9 @@
 public class ToAdd {
-
-
     /**
      * To add:
+     * 0) Remove the Farm button when you're in the Farm scene.
      * 1) Resolve the issue of "the more items you add to the inventory, the more lag occurs whenever you collect a new item."
      * 2) Resolve the issue of "the more items in your inventory, the more it lags when you press Deposit All in the bank scene."
-     * 3) Add farm plots to the screen based on the number of farm plots you have by the time you scene transition to the farm.
-     * It should spawn the farm plots with a transparent farm plot panel background, in a 3x2 in such a way that if there are more than 6 farm plots,
-     * there will be added to the button panel a Forward or -> button which shows you the next "page" of farm plots, such that you can effectively scroll through all
-     * your farm plots. Of course there will need to be a back button added as well so you can scroll back to previous farm plot "pages", so to speak.
      * 4) Style the farm plot panel until it looks nice.
      * 5) Style the buttons so that everything looks as intended.
      * 6) I now have images of a seed buried, and subsequent images that show how that seed grows over time. What I want
@@ -26,6 +21,4 @@ public class ToAdd {
      * That means "/cabbageGrowing1.png" to "/cabbageGrowning2.png", etc.
      *
      */
-
-
 }

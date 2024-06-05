@@ -50,7 +50,6 @@ public class GameFrame extends JFrame {
     boolean showPercentage = true;
     private int currentFarmPage = 0;
 
-
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
         this.currentScene = scenes.get("forest");
@@ -79,8 +78,6 @@ public class GameFrame extends JFrame {
         layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(1400, 800));
         layeredPane.setBackground(Color.BLACK); // This is just a fallback, main color is set in contentPane
-
-
 
         preloadImages(); // Preload all images
 
@@ -172,11 +169,9 @@ public class GameFrame extends JFrame {
 
     public void drawFarmPlots(int farmPlotAmount) {
         if (sceneImagePanel == null) {
-            System.err.println("Error: sceneImagePanel is null.");
-            return;
+            System.err.println("Error: sceneImagePanel is null!");
         }
 
-        // Create a new panel for the farm plots
         JPanel farmPanel = new JPanel();
         farmPanel.setLayout(null);
         farmPanel.setBounds(0, 0, sceneImagePanel.getWidth(), sceneImagePanel.getHeight());
@@ -190,30 +185,29 @@ public class GameFrame extends JFrame {
         int gridWidth = 3;
         int gridHeight = 2;
         int plotSize = 90;
-        int horizontalGap = 50; // Add horizontal gap
+        int horizontalGap = 50;
         int xOffset = (sceneImagePanel.getWidth() - (gridWidth * plotSize + (gridWidth - 1) * horizontalGap)) / 2;
         int yOffset = sceneImagePanel.getHeight() - gridHeight * plotSize - 10;
 
+        // Add farm plots to the farmPanel
         for (int i = startPlot; i < endPlot; i++) {
             int plotIndex = i - startPlot;
-            int x = xOffset + (plotIndex % gridWidth) * (plotSize + horizontalGap);
+            int x = xOffset + (plotIndex % gridWidth) * (plotSize + horizontalGap); // Added more horizontal spacing
             int y = yOffset + (plotIndex / gridWidth) * plotSize;
-
             JLabel plotLabel = new JLabel();
             plotLabel.setBounds(x, y, plotSize, plotSize);
             plotLabel.setOpaque(false);
 
-            // Set the image icon
-            ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmPlot-transparent.png"));
+            ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
             Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
             plotLabel.setIcon(new ImageIcon(scaledImage));
 
             farmPanel.add(plotLabel);
 
-            System.out.println("Farm plot " + (i + 1) + " drawn at x: " + x + ", y: " + y);
+            System.out.println("Farm plot: " + (i + 1) + " drawn at x: " + x + ", y: " + y);
         }
 
-        // Add back button if there are multiple pages
+        // Add back button if applicable
         if (currentFarmPage > 0) {
             JButton backButton = new JButton("<--");
             backButton.setBounds(10, sceneImagePanel.getHeight() - 40, 50, 30);
@@ -224,7 +218,7 @@ public class GameFrame extends JFrame {
             farmPanel.add(backButton);
         }
 
-        // Add next button if there are multiple pages
+        // Add next button if applicable
         if (currentFarmPage < totalPages - 1) {
             JButton nextButton = new JButton("-->");
             nextButton.setBounds(sceneImagePanel.getWidth() - 60, sceneImagePanel.getHeight() - 40, 50, 30);
@@ -235,16 +229,15 @@ public class GameFrame extends JFrame {
             farmPanel.add(nextButton);
         }
 
-        // Ensure farmPanel is added correctly
+        // Ensure all components are added to the sceneImagePanel
         sceneImagePanel.removeAll();
-        sceneImagePanel.setLayout(null); // Ensure absolute positioning
+        sceneImagePanel.setLayout(null);
         sceneImagePanel.add(farmPanel);
         sceneImagePanel.revalidate();
         sceneImagePanel.repaint();
 
         System.out.println("Farm plots drawn. FarmPanel bounds: " + farmPanel.getBounds());
     }
-
 
     public void moveAction() {
         Scene currentScene = getCurrentScene();
@@ -373,7 +366,6 @@ public class GameFrame extends JFrame {
         System.out.println("Key bindings initialized!");
     }
 
-
     public void setMoveButton(JButton moveButton) {
         this.moveButton = moveButton;
         System.out.println("MoveButton set with Bounds: " + moveButton.getBounds());
@@ -469,9 +461,10 @@ public class GameFrame extends JFrame {
     }
 
     public void setCurrentScene(Scene scene) {
+        clearFarmElements();
         currentScene = scene;
         updateScene();
-        System.out.println("Current Scene: " + currentScene.getName()); // Debug
+        System.out.println("Current scene: " + currentScene.getName());
         if ("farm".equals(scene.getName())) {
             drawFarmPlots(farmPlotAmount);
         }
@@ -479,6 +472,34 @@ public class GameFrame extends JFrame {
         repaint();
     }
 
+    public void clearFarmElements() {
+        System.out.println("Clearing farm elements...");
+
+        if (sceneImagePanel != null) {
+            sceneImagePanel.removeAll();
+            sceneImagePanel.revalidate();
+            sceneImagePanel.repaint();
+            System.out.println("All components removed from sceneImagePanel.");
+        }
+
+        if (layeredPane != null) {
+            List<Component> componentsToRemove = new ArrayList<>();
+            for (Component comp : layeredPane.getComponents()) {
+                if (comp instanceof JButton) {
+                    JButton button = (JButton) comp;
+                    if ("<--".equals(button.getText()) || "-->".equals(button.getText())) {
+                        componentsToRemove.add(button);
+                    }
+                }
+            }
+            for (Component comp : componentsToRemove) {
+                layeredPane.remove(comp);
+                System.out.println("Removed button: " + ((JButton) comp).getText());
+            }
+            layeredPane.revalidate();
+            layeredPane.repaint();
+        }
+    }
 
     public Map<String, Scene> getScenes() {
         return scenes;
@@ -688,7 +709,6 @@ public class GameFrame extends JFrame {
         updateSelectionBox();
     }
 
-
     private Image createShadowImage(Image originalImage) {
         BufferedImage shadowImage = new BufferedImage(originalImage.getWidth(null), originalImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = shadowImage.createGraphics();
@@ -743,6 +763,11 @@ public class GameFrame extends JFrame {
 
         // Debug statement
         System.out.println("Scene updated to: " + currentScene.getName());
+
+        // Draw farm plots only if the current scene is the farm
+        if ("farm".equals(currentScene.getName())) {
+            drawFarmPlots(farmPlotAmount);
+        }
     }
 
 
