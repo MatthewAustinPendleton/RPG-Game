@@ -154,7 +154,7 @@ public class GameFrame extends JFrame {
             System.out.println("Button: " + button.getText() + " Size: " + button.getSize());
         });
 
-        setFarmPlotAmount(0);
+        setFarmPlotAmount(10);
 
         // Ensure the farm button visibility is updated based on farmPlotAmount
         updateFarmButtonVisibility();
@@ -585,6 +585,11 @@ public class GameFrame extends JFrame {
     }
 
     public void updateFarmButtonVisibility() {
+        if (farmButton == null) {
+            System.err.println("FarmButton is null.");
+            return;
+        }
+
         boolean shouldShowFarmButton = farmPlotAmount > 0;
         farmButton.setVisible(shouldShowFarmButton);
         farmButton.setEnabled(shouldShowFarmButton);
@@ -592,10 +597,12 @@ public class GameFrame extends JFrame {
         // Debug prints
         System.out.println("FarmButton visibility updated: " + farmButton.isVisible());
         System.out.println("FarmButton enabled: " + farmButton.isEnabled());
+        System.out.println("FarmPlotAmount: " + farmPlotAmount);
 
         // Ensure the selection box is updated
         updateSelectionBox();
     }
+
 
     private Image createShadowImage(Image originalImage) {
         BufferedImage shadowImage = new BufferedImage(originalImage.getWidth(null), originalImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);

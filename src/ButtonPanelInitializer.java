@@ -23,9 +23,20 @@ public class ButtonPanelInitializer {
         int yOffset = 18;
         buttonPanel.setBounds(xOffset, 650 + yOffset, sceneImagePanelWidth, 50); // Adjust as necessary
 
+        // Fixed spacing based on the earlier image
+        int buttonWidth = 80;
+        int buttonHeight = 30;
+        int gap = 20; // Adjust this value to change the space between the buttons
+
+        // Calculate the total width occupied by the buttons and gaps
+        int totalWidth = 3 * buttonWidth + 2 * gap;
+
+        // Calculate the starting X position to center the buttons
+        int startX = (sceneImagePanelWidth - totalWidth) / 2;
+
         // Move Button
         JButton moveButton = new JButton("Move");
-        moveButton.setBounds((sceneImagePanelWidth / 2) - 100, 10, 80, 30); // Adjusted positions to center
+        moveButton.setBounds(startX, 10, buttonWidth, buttonHeight);
         moveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -36,7 +47,7 @@ public class ButtonPanelInitializer {
 
         // Forage Button
         JButton forageButton = new JButton("Forage");
-        forageButton.setBounds((sceneImagePanelWidth / 2) + 20, 10, 80, 30); // Adjusted positions to center
+        forageButton.setBounds(startX + buttonWidth + gap, 10, buttonWidth, buttonHeight);
         forageButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -45,31 +56,9 @@ public class ButtonPanelInitializer {
         });
         buttonPanel.add(forageButton);
 
-        // Bank Button
-        JButton bankButton = new JButton("Bank");
-        bankButton.setBounds(0, 0, 0, 0); // Initially hidden
-        bankButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                gameFrame.toggleBankWindow();
-            }
-        });
-        buttonPanel.add(bankButton);
-
-        // Deposit All Button
-        JButton depositAllButton = new JButton("Deposit All");
-        depositAllButton.setBounds(0, 0, 0, 0); // Initially hidden
-        depositAllButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                gameFrame.depositAllItemsToBank();
-            }
-        });
-        buttonPanel.add(depositAllButton);
-
         // Farm Button
         JButton farmButton = new JButton("Farm");
-        farmButton.setBounds(0, 0, 0, 0); // Initially hidden
+        farmButton.setBounds(startX + 2 * (buttonWidth + gap), 10, buttonWidth, buttonHeight);
         farmButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -101,6 +90,28 @@ public class ButtonPanelInitializer {
         });
         buttonPanel.add(farmButton);
 
+        // Bank Button
+        JButton bankButton = new JButton("Bank");
+        bankButton.setBounds(0, 0, 0, 0); // Initially hidden
+        bankButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gameFrame.toggleBankWindow();
+            }
+        });
+        buttonPanel.add(bankButton);
+
+        // Deposit All Button
+        JButton depositAllButton = new JButton("Deposit All");
+        depositAllButton.setBounds(0, 0, 0, 0); // Initially hidden
+        depositAllButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                gameFrame.depositAllItemsToBank();
+            }
+        });
+        buttonPanel.add(depositAllButton);
+
         // Add buttons to the mainButtons list
         gameFrame.mainButtons.add(moveButton);
         gameFrame.mainButtons.add(forageButton);
@@ -118,6 +129,16 @@ public class ButtonPanelInitializer {
 
         // Initialize button states based on conditions
         gameFrame.updateFarmButtonVisibility();
+
+        // Force repaint and revalidate
+        buttonPanel.repaint();
+        buttonPanel.revalidate();
+        layeredPane.repaint();
+        layeredPane.revalidate();
+
+        System.out.println("FarmButton bounds after setting: " + farmButton.getBounds());
+        System.out.println("FarmButton visibility after setting: " + farmButton.isVisible());
+        System.out.println("FarmButton enabled after setting: " + farmButton.isEnabled());
     }
 
     // Add a getter method for buttonPanel
