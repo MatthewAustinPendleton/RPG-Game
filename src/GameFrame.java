@@ -394,10 +394,13 @@ public class GameFrame extends JFrame {
     public void updateButtonStates() {
         boolean isBankScene = "You are in the bank.".equals(currentScene.getDescription());
         boolean isBankWindowVisible = bankWindow.isVisible();
+        boolean isFarmScene = "You are at your farm.".equals(currentScene.getDescription());
 
         bankButton.setVisible(isBankScene);
         forageButton.setEnabled(!isBankScene);
         moveButton.setEnabled(!isBankWindowVisible);
+        farmButton.setVisible(!isFarmScene);
+        forageButton.setVisible(!isFarmScene);
 
         if (isBankScene) {
             bankButton.setEnabled(true);
@@ -405,6 +408,9 @@ public class GameFrame extends JFrame {
         } else {
             depositAllButton.setVisible(false);
         }
+
+        buttonPanelInitializer.getButtonPanel().revalidate();
+        buttonPanelInitializer.getButtonPanel().repaint();
 
         // Debug prints
         System.out.println("Button states updated!");
@@ -468,9 +474,12 @@ public class GameFrame extends JFrame {
         if ("farm".equals(scene.getName())) {
             drawFarmPlots(farmPlotAmount);
         }
+        updateButtonStates(); // Update button states after changing the scene
+        updateCollectionsPanel(currentScene); // Update collections panel based on the current scene
         validate();
         repaint();
     }
+
 
     public void clearFarmElements() {
         System.out.println("Clearing farm elements...");
@@ -611,7 +620,7 @@ public class GameFrame extends JFrame {
         itemPanel.setPreferredSize(new Dimension(70, 70));
 
         ImageIcon originalIcon = getPreloadedImage(item.getName());
-        Image shadowImage = createShadowImage(originalIcon.getImage());
+        Image shadowImage = createBlackShadowImage(originalIcon.getImage());
         ImageIcon shadowIcon = new ImageIcon(shadowImage.getScaledInstance(70, 70, Image.SCALE_SMOOTH));
 
         JLabel iconLabel = new JLabel(shadowIcon, JLabel.CENTER);
@@ -628,6 +637,17 @@ public class GameFrame extends JFrame {
         itemPanel.add(levelLabel, BorderLayout.SOUTH);
 
         return itemPanel;
+    }
+
+    private Image createBlackShadowImage(Image originalImage) {
+        BufferedImage blackShadowImage = new BufferedImage(originalImage.getWidth(null), originalImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics2D = blackShadowImage.createGraphics();
+        graphics2D.drawImage(originalImage, 0, 0, null);
+        graphics2D.setComposite(AlphaComposite.SrcIn);
+        graphics2D.setColor(new Color(0, 0, 0, 255));
+        graphics2D.fillRect(0, 0, originalImage.getWidth(null), originalImage.getHeight(null));
+        graphics2D.dispose();
+        return blackShadowImage;
     }
 
     public void disableMoveButton() {
