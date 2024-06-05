@@ -45,10 +45,12 @@ public class GameFrame extends JFrame {
     private int farmPlotAmount = 10; // Added farmPlotAmount
     boolean showPercentage = true;
     private int currentFarmPage = 0;
+    private Scene previousScene;
 
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
         this.currentScene = scenes.get("forest");
+        this.previousScene = this.currentScene;
         this.discoveredItems = new HashSet<>();
         this.collectionsPanels = new HashMap<>();
 
@@ -260,11 +262,24 @@ public class GameFrame extends JFrame {
 
     public void moveAction() {
         Scene currentScene = getCurrentScene();
+        System.out.println("Current Scene: " + currentScene.getName());
         List<String> adjacentScenes = currentScene.getAdjacentScenes();
 
         // Debug statements
         System.out.println("Attempting to move from Scene: " + currentScene.getName());
         System.out.println("Adjacent Scenes: " + adjacentScenes);
+        System.out.println("Previous Scene: " + (previousScene != null ? previousScene.getName() : "null"));
+
+        if (currentScene.getName().equals("farm")) {
+            if (previousScene != null) {
+                System.out.println("Returning to previous scene: " + previousScene.getName());
+                setCurrentScene(previousScene);
+                previousScene = null; // Clear previousScene after moving back
+            } else {
+                System.out.println("Error: previousScene is null.");
+            }
+            return;
+        }
 
         if (adjacentScenes.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No adjacent scenes available.");
@@ -272,6 +287,8 @@ public class GameFrame extends JFrame {
         }
 
         if (adjacentScenes.size() == 1) {
+            previousScene = currentScene; // Set previousScene before moving
+            System.out.println("Setting previousScene to: " + previousScene.getName());
             setCurrentScene(scenes.get(adjacentScenes.get(0)));
         } else {
             String nextSceneName = (String) JOptionPane.showInputDialog(
@@ -285,6 +302,8 @@ public class GameFrame extends JFrame {
             );
 
             if (nextSceneName != null && scenes.containsKey(nextSceneName)) {
+                previousScene = currentScene; // Set previousScene before moving
+                System.out.println("Setting previousScene to: " + previousScene.getName());
                 setCurrentScene(scenes.get(nextSceneName));
             } else {
                 JOptionPane.showMessageDialog(this, "Scene not found: " + nextSceneName);
@@ -409,7 +428,6 @@ public class GameFrame extends JFrame {
     }
 
     public void updateButtonStates() {
-        // Ensure currentScene is not null
         if (currentScene == null) {
             System.err.println("Error: currentScene is null.");
             return;
@@ -454,7 +472,6 @@ public class GameFrame extends JFrame {
             }
         }
 
-        // Ensure buttonPanel is not null
         JPanel buttonPanel = buttonPanelInitializer.getButtonPanel();
         if (buttonPanel == null) {
             System.err.println("Error: buttonPanel is null.");
@@ -463,7 +480,6 @@ public class GameFrame extends JFrame {
             buttonPanel.repaint();
         }
 
-        // Debug prints
         System.out.println("Button states updated!");
         if (bankButton != null) {
             System.out.println("BankButton visible: " + bankButton.isVisible());
@@ -531,10 +547,20 @@ public class GameFrame extends JFrame {
     }
 
     public void setCurrentScene(Scene scene) {
+        System.out.println("Setting current scene. Current: " + (currentScene != null ? currentScene.getName() : "null") + ", New: " + scene.getName());
+
+        if (currentScene != null && !currentScene.getName().equals(scene.getName())) {
+            if (!"farm".equals(scene.getName())) {
+                previousScene = currentScene; // Set previousScene before changing to any other scene
+                System.out.println("Setting previousScene to: " + previousScene.getName());
+            }
+        }
+
+        System.out.println("Changing current scene to: " + scene.getName());
         clearFarmElements();
         currentScene = scene;
         updateScene();
-        System.out.println("Current scene: " + currentScene.getName());
+        System.out.println("Updated current scene to: " + currentScene.getName());
         if ("farm".equals(scene.getName())) {
             drawFarmPlots(farmPlotAmount);
         }
@@ -543,7 +569,6 @@ public class GameFrame extends JFrame {
         validate();
         repaint();
     }
-
 
     public void clearFarmElements() {
         System.out.println("Clearing farm elements...");
