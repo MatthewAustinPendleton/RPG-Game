@@ -45,11 +45,41 @@ public class BankWindow extends JInternalFrame {
 
     public void depositAllItemsToBank() {
         Inventory inventory = gameFrame.getInventory();
+
+        // Disable UI updates temporarily
+        bankPanel.setVisible(false);
+
+        // Use a Map to store item counts to update the bank in a batch
+        Map<String, Integer> itemCountMap = new HashMap<>();
+
         for (Item item : inventory.getItems()) {
-            addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
+            itemCountMap.put(item.getName(), item.getCount());
         }
+
+        // Add items to the bank in a batch
+        for (Map.Entry<String, Integer> entry : itemCountMap.entrySet()) {
+            String itemName = entry.getKey();
+            int itemCount = entry.getValue();
+
+            Item item = items.get(itemName);
+            if (item != null) {
+                item.incrementCount(itemCount);
+            } else {
+                Item inventoryItem = inventory.getItemByName(itemName);
+                items.put(itemName, new Item(inventoryItem.getName(), inventoryItem.getIconPath(), inventoryItem.getWeight(), inventoryItem.getExperience(), inventoryItem.getLevelRequirement(), itemCount));
+            }
+        }
+
+        // Clear the inventory after transferring items
         inventory.clear();
+
+        // Refresh the UI once after all items are processed
+        refreshBankPanel();
+
+        // Re-enable UI updates
+        bankPanel.setVisible(true);
     }
+
 
     public void refreshBankPanel() {
         bankPanel.removeAll();

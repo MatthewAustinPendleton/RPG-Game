@@ -79,8 +79,6 @@ public class ButtonPanelInitializer {
     private JButton createButton(String text, ActionListener actionListener) {
         JButton button = new JButton(text);
         button.addActionListener(actionListener);
-        System.out.println("Created button with text: " + text);
-        System.out.println("Button text: " + button.getText());
         return button;
     }
 

@@ -1,8 +1,6 @@
 public class ToAdd {
     /**
      * To add:
-     * 0) No adjacent scenes issue in Farm scene, needs to remember which scene you were in and take you back there.
-     * 2) Resolve the issue of "the more items in your inventory, the more it lags when you press Deposit All in the bank scene."
      * 6) I now have images of a seed buried, and subsequent images that show how that seed grows over time. What I want
      * now is a system where you have a seed in your inventory, for the time being let's just say it's an cabbage seed.
      * The idea is that when you're in the farm scene, if you right-click on an "empty" farm plot, that is one where

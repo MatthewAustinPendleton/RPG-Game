@@ -54,7 +54,9 @@ public class ForagingManager {
      * Starts the foraging process.
      */
     public synchronized void startForaging() {
-        if (isForaging) return;
+        if (isForaging) {
+            return;
+        }
         isForaging = true;
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();

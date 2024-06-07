@@ -308,11 +308,10 @@ public class GameFrame extends JFrame {
         }
     }
 
-
-
     public void forageAction() {
-        ForageButtonListener forageListener = new ForageButtonListener(foragingManager);
-        forageListener.actionPerformed(null); // Trigger the forage action
+        if (!foragingManager.getIsForagingBoolean()) {
+            foragingManager.startForaging();
+        }
     }
 
     public void depositAllItemsToBank() {
@@ -327,8 +326,8 @@ public class GameFrame extends JFrame {
 
         inputMap.put(KeyStroke.getKeyStroke("LEFT"), "moveLeft");
         inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
-        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectButton");
-        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("released SPACE"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("released ENTER"), "selectButton");
 
         actionMap.put("moveLeft", new AbstractAction() {
             @Override

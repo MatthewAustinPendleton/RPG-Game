@@ -30,6 +30,10 @@ public class Inventory {
         initInventoryPanel();
     }
 
+    public Item getItemByName(String name) {
+        return items.get(name);
+    }
+
     /**
      * Sets the slots panel to the specified panel.
      *
