@@ -80,7 +80,6 @@ public class BankWindow extends JInternalFrame {
         bankPanel.setVisible(true);
     }
 
-
     public void refreshBankPanel() {
         bankPanel.removeAll();
 
