@@ -54,18 +54,17 @@ public class ForagingManager {
      * Starts the foraging process.
      */
     public synchronized void startForaging() {
-        if (isForaging) {
-            return;
-        }
+        if (isForaging) return;
         isForaging = true;
         gameFrame.disableMoveButton();
         gameFrame.disableForageButton();
         gameFrame.disableFarmButton();
-        soundManager.playSound("/foraging.wav");
+        soundManager.playSound("/foraging.wav"); // Play sound here
         forageTimer = new Timer(getForagingTime(), new ForagingTimerListener());
         forageTimer.setRepeats(false);
         forageTimer.start();
     }
+
 
     private class ForagingTimerListener implements ActionListener {
         @Override
@@ -222,29 +221,24 @@ public class ForagingManager {
         gameFrame.getSceneImagePanel().setComponentZOrder(itemLabel, 0);
         gameFrame.getSceneImagePanel().repaint();
 
-        // Adjust the endpoint so the item goes further into the basket
-        int endX = basketX + (basketSize - initialSize) / 2 + 35; // Move further into the basket
-        int endY = basketY + (basketSize - initialSize) / 2 + 38; // Move further into the basket
+        int endX = basketX + (basketSize - initialSize) / 2 + 35;
+        int endY = basketY + (basketSize - initialSize) / 2 + 38;
         int controlX = (startX + endX) / 2;
         int controlY = startY - 150;
 
         Timer animationTimer = new Timer(20, new ActionListener() {
             private double t = 0.0;
             private double rotation = 0.0;
-
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (t <= 1.0) {
                     double u = 1 - t;
                     int x = (int) (u * u * startX + 2 * u * t * controlX + t * t * endX);
                     int y = (int) (u * u * startY + 2 * u * t * controlY + t * t * endY);
-
                     double scale = 1.0 - (t / 2.5);
                     int newSize = (int) (initialSize * scale);
+                    rotation += Math.toRadians(10);
 
-                    rotation += Math.toRadians(10); // Rotate 10 degrees per step
-
-                    // Apply transformations
                     BufferedImage originalImage = new BufferedImage(itemIcon.getIconWidth(), itemIcon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
                     Graphics2D g2d = originalImage.createGraphics();
                     g2d.drawImage(itemIcon.getImage(), 0, 0, null);
@@ -270,16 +264,19 @@ public class ForagingManager {
                     itemLabel.setLocation(x, y);
 
                     t += 0.025;
-                } else {
+                }
+                else {
                     ((Timer) e.getSource()).stop();
                     gameFrame.getSceneImagePanel().remove(itemLabel);
                     gameFrame.getSceneImagePanel().remove(basketLabel);
                     gameFrame.getSceneImagePanel().repaint();
                     playCollectSound(foragedItem.getWeight());
-                    gameFrame.addForagedItemToInventory(foragedItem);
                     if (onComplete != null) {
                         onComplete.run();
                     }
+                    SwingUtilities.invokeLater(() -> {
+                        gameFrame.addForagedItemToInventory(foragedItem);
+                    });
                 }
                 itemLabel.repaint();
             }

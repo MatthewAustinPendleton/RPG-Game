@@ -272,7 +272,7 @@ public class GameFrame extends JFrame {
             if (previousScene != null) {
                 System.out.println("Returning to previous scene: " + previousScene.getName());
                 setCurrentScene(previousScene);
-                return;  // Exit early since we've handled the farm move
+                return;
             } else {
                 System.out.println("Error: previousScene is null.");
             }
@@ -284,7 +284,7 @@ public class GameFrame extends JFrame {
         }
 
         if (adjacentScenes.size() == 1) {
-            previousScene = currentScene;  // Set previousScene before moving
+            previousScene = currentScene;
             System.out.println("Setting previousScene to: " + previousScene.getName());
             setCurrentScene(scenes.get(adjacentScenes.get(0)));
         } else {
@@ -299,7 +299,7 @@ public class GameFrame extends JFrame {
             );
 
             if (nextSceneName != null && scenes.containsKey(nextSceneName)) {
-                previousScene = currentScene;  // Set previousScene before moving
+                previousScene = currentScene;
                 System.out.println("Setting previousScene to: " + previousScene.getName());
                 setCurrentScene(scenes.get(nextSceneName));
             } else {
@@ -326,21 +326,21 @@ public class GameFrame extends JFrame {
 
         inputMap.put(KeyStroke.getKeyStroke("LEFT"), "moveLeft");
         inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "moveRight");
-        inputMap.put(KeyStroke.getKeyStroke("released SPACE"), "selectButton");
-        inputMap.put(KeyStroke.getKeyStroke("released ENTER"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("SPACE"), "selectButton");
+        inputMap.put(KeyStroke.getKeyStroke("ENTER"), "selectButton");
 
         actionMap.put("moveLeft", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
-                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x))
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 if (selectedButtonIndex > 0) {
                     selectedButtonIndex--;
                 } else {
-                    selectedButtonIndex = visibleButtons.size() - 1; // Wrap to the last button
+                    selectedButtonIndex = visibleButtons.size() - 1;
                 }
                 updateSelectionBox(visibleButtons);
             }
@@ -349,15 +349,15 @@ public class GameFrame extends JFrame {
         actionMap.put("moveRight", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
-                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x))
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 if (selectedButtonIndex < visibleButtons.size() - 1) {
                     selectedButtonIndex++;
                 } else {
-                    selectedButtonIndex = 0; // Wrap to the first button
+                    selectedButtonIndex = 0;
                 }
                 updateSelectionBox(visibleButtons);
             }
@@ -366,9 +366,9 @@ public class GameFrame extends JFrame {
         actionMap.put("selectButton", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                java.util.List<JButton> visibleButtons = mainButtons.stream()
+                List<JButton> visibleButtons = mainButtons.stream()
                         .filter(Component::isVisible)
-                        .sorted(Comparator.comparingInt(b -> b.getLocation().x)) // Sort by x coordinate
+                        .sorted(Comparator.comparingInt(b -> b.getLocation().x))
                         .collect(Collectors.toList());
                 if (visibleButtons.isEmpty()) return;
                 JButton selectedButton = visibleButtons.get(selectedButtonIndex);
@@ -381,7 +381,6 @@ public class GameFrame extends JFrame {
         tabbedPane.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, emptySet);
         tabbedPane.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, emptySet);
 
-        // Debug prints
         System.out.println("Key bindings initialized!");
     }
 

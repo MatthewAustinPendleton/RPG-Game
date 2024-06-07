@@ -4,29 +4,22 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 
-/**
- * Inventory manages the items in the player's inventory and provides methods
- * to add, remove, and display items.
- */
 public class Inventory {
-
     private Map<String, Item> items;
     private JPanel inventoryPanel;
     private Map<Integer, Item> slotItems; // Mapping from slot index to items
     private int maxCapacity = 24;
     private GameFrame gameFrame;
+    private Set<String> uniqueItems; // Set to track unique items
+    private int updateThreshold = 5; // Number of items to batch before updating UI
+    private int updateCounter = 0;
 
-    /**
-     * Constructs an Inventory with the specified inventory panel and game frame.
-     *
-     * @param inventoryPanel the inventory panel
-     * @param gameFrame      the game frame
-     */
     public Inventory(JPanel inventoryPanel, GameFrame gameFrame) {
         this.items = new HashMap<>();
         this.inventoryPanel = inventoryPanel;
         this.slotItems = new HashMap<>();
         this.gameFrame = gameFrame;
+        this.uniqueItems = new HashSet<>(); // Initialize the set
         initInventoryPanel();
     }
 
@@ -34,11 +27,6 @@ public class Inventory {
         return items.get(name);
     }
 
-    /**
-     * Sets the slots panel to the specified panel.
-     *
-     * @param slotsPanel the slots panel
-     */
     public void setSlotsPanel(JPanel slotsPanel) {
         this.inventoryPanel = slotsPanel;
         initInventoryPanel();
@@ -62,7 +50,6 @@ public class Inventory {
         inventoryPanel.revalidate();
         inventoryPanel.repaint();
 
-        // Debugging output
         System.out.println("Inventory panel initialized with slots.");
     }
 
@@ -78,28 +65,48 @@ public class Inventory {
         return slot;
     }
 
-    /**
-     * Adds an item to the inventory.
-     *
-     * @param item the item to add
-     * @return true if the item was added successfully, false if the inventory is full
-     */
     public boolean addItem(Item item) {
         int emptySlot = findFirstEmptySlot();
         if (emptySlot == -1) {
             return false; // Inventory is full
         }
 
+        boolean isNewItem = !items.containsKey(item.getName());
+        if (isNewItem) {
+            uniqueItems.add(item.getName()); // Add to the set of unique items
+        }
+
         if (items.containsKey(item.getName())) {
             items.get(item.getName()).incrementCount(item.getCount());
+            updateItemPanel(item); // Ensure the item panel is updated
         } else {
             items.put(item.getName(), item);
             slotItems.put(emptySlot, item);
         }
 
-        // Batch update UI after adding all items
-        refreshInventoryPanel();
+        updateCounter++;
+
+        if (isNewItem || updateCounter >= updateThreshold) {
+            updateCounter = 0;
+            SwingUtilities.invokeLater(this::refreshInventoryPanel);
+        } else {
+            SwingUtilities.invokeLater(() -> updateItemPanel(item));
+        }
         return true;
+    }
+
+
+    private void updateItemPanel(Item item) {
+        for (int i = 0; i < maxCapacity; i++) {
+            if (slotItems.containsKey(i) && slotItems.get(i).getName().equals(item.getName())) {
+                JPanel slot = (JPanel) inventoryPanel.getComponent(i);
+                slot.removeAll();
+                slot.add(createItemPanel(item));
+                slot.revalidate();
+                slot.repaint();
+                break;
+            }
+        }
     }
 
     private int findFirstEmptySlot() {
@@ -152,12 +159,6 @@ public class Inventory {
         menu.show(e.getComponent(), e.getX(), e.getY());
     }
 
-    /**
-     * Removes the specified amount of an item from the inventory.
-     *
-     * @param item  the item to remove
-     * @param count the amount to remove
-     */
     public void removeItem(Item item, int count) {
         if (items.containsKey(item.getName())) {
             Item inventoryItem = items.get(item.getName());
@@ -166,44 +167,28 @@ public class Inventory {
             } else {
                 items.remove(item.getName());
                 slotItems.values().remove(inventoryItem);
+                uniqueItems.remove(item.getName()); // Remove from unique items set
             }
             refreshInventoryPanel();
         }
     }
 
-    /**
-     * Checks if the inventory is full.
-     *
-     * @return true if the inventory is full, false otherwise
-     */
     public boolean isFull() {
         return slotItems.size() >= maxCapacity;
     }
 
-    /**
-     * Returns the items in the inventory.
-     *
-     * @return a collection of items in the inventory
-     */
     public Collection<Item> getItems() {
         return new ArrayList<>(items.values());
     }
 
-    /**
-     * Clears the inventory by removing all items.
-     */
     public void clear() {
         items.clear();
         slotItems.clear();
+        uniqueItems.clear(); // Clear the set of unique items
         refreshInventoryPanel();
-
-        // Debugging output
         System.out.println("Inventory cleared.");
     }
 
-    /**
-     * Refreshes the inventory panel to display the current items.
-     */
     public void refreshInventoryPanel() {
         inventoryPanel.removeAll();
         GridBagConstraints gbc = new GridBagConstraints();
@@ -223,8 +208,6 @@ public class Inventory {
         }
         inventoryPanel.revalidate();
         inventoryPanel.repaint();
-
-        // Debugging output
         System.out.println("Inventory panel refreshed.");
     }
 
@@ -268,11 +251,6 @@ public class Inventory {
         bankWindow.refreshBankPanel();
     }
 
-    /**
-     * Handles item deposit to the bank.
-     *
-     * @param item the item to deposit
-     */
     public void handleItemDepositToBank(Item item) {
         BankWindow bankWindow = gameFrame.getBankWindow();
         bankWindow.addItemToBank(new Item(item.getName(), item.getIconPath(), item.getWeight(), item.getExperience(), item.getLevelRequirement(), item.getCount()));
