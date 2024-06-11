@@ -10,8 +10,9 @@ public class BackgroundPanel extends JPanel {
 
     /**
      * Constructs a BackgroundPanel with the specified image path.
+     * The image is loaded from the classpath using the provided path.
      *
-     * @param imagePath the path to the background image
+     * @param imagePath the relative path to the background image file within the classpath
      */
     public BackgroundPanel(String imagePath) {
         setBackgroundImage(imagePath);
@@ -19,9 +20,10 @@ public class BackgroundPanel extends JPanel {
 
     /**
      * Sets the background image from the specified image path.
-     * The method updates the current background image and repaints the panel.
+     * The image is loaded from the classpath using the provided path.
+     * The method updates the current background image and repaints the panel to display the new image.
      *
-     * @param imagePath the path to the background image
+     * @param imagePath the relative path to the background image file within the classpath
      */
     public void setBackgroundImage(String imagePath) {
         backgroundImage = new ImageIcon(getClass().getResource(imagePath)).getImage();
@@ -30,7 +32,8 @@ public class BackgroundPanel extends JPanel {
 
     /**
      * Overrides the paintComponent method to draw the background image.
-     * The background image is drawn to fill the entire panel.
+     * The background image is drawn to fill the entire panel area.
+     * If no image is set, the default panel background is used.
      *
      * @param g the Graphics object used for drawing
      */

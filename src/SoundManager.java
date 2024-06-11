@@ -1,35 +1,55 @@
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import javax.sound.sampled.*;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SoundManager {
+    private Map<String, Clip> soundClips;
+    private Clip foragingClip;
 
-    private Clip forageSoundClip;
+    public SoundManager() {
+        soundClips = new HashMap<>();
+        foragingClip = null;
+    }
 
     private void preloadSound(String soundFilePath) {
         try {
             URL soundURL = getClass().getResource(soundFilePath);
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundURL);
-            forageSoundClip = AudioSystem.getClip();
-            forageSoundClip.open(audioInputStream);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioInputStream);
+            soundClips.put(soundFilePath, clip);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
     public void playSound(String filePath) {
-        stopSound(); // Stop any currently playing sound
+        Clip clip = soundClips.get(filePath);
+        if (clip == null) {
+            preloadSound(filePath);
+            clip = soundClips.get(filePath);
+        }
+        if (clip != null) {
+            clip.setFramePosition(0);
+            clip.start();
+        }
+    }
 
-        try {
-            if (forageSoundClip == null || !forageSoundClip.isOpen()) {
-                preloadSound(filePath); // Ensure the sound is preloaded
-            }
-            forageSoundClip.setFramePosition(0); // Reset to the start
-            forageSoundClip.start();
-        } catch (Exception e) {
-            e.printStackTrace();
+    public void playForagingSound() {
+        if (foragingClip == null) {
+            preloadSound("/foraging.wav");
+            foragingClip = soundClips.get("/foraging.wav");
+        }
+        if (foragingClip != null) {
+            foragingClip.setFramePosition(0);
+            foragingClip.loop(Clip.LOOP_CONTINUOUSLY);
+        }
+    }
+
+    public void stopForagingSound() {
+        if (foragingClip != null && foragingClip.isRunning()) {
+            foragingClip.stop();
         }
     }
 
@@ -46,11 +66,21 @@ public class SoundManager {
         playSound("/wow.wav");
     }
 
-    public void stopSound() {
-        System.out.println("Stopping the sound.");
-        if (forageSoundClip != null && forageSoundClip.isRunning()) {
-            forageSoundClip.stop();
-            forageSoundClip.close();
+    public void stopSound(String filePath) {
+        Clip clip = soundClips.get(filePath);
+        if (clip != null && clip.isRunning()) {
+            clip.stop();
+        }
+    }
+
+    public void stopAllSounds() {
+        for (Clip clip : soundClips.values()) {
+            if (clip != null && clip.isRunning()) {
+                clip.stop();
+            }
+        }
+        if (foragingClip != null && foragingClip.isRunning()) {
+            foragingClip.stop();
         }
     }
 }

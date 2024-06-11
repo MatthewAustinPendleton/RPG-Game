@@ -68,30 +68,23 @@ public class Inventory {
     public boolean addItem(Item item) {
         int emptySlot = findFirstEmptySlot();
         if (emptySlot == -1) {
-            return false; // Inventory is full
+            return false;
         }
-
         boolean isNewItem = !items.containsKey(item.getName());
         if (isNewItem) {
-            uniqueItems.add(item.getName()); // Add to the set of unique items
+            uniqueItems.add(item.getName());
         }
-
         if (items.containsKey(item.getName())) {
             items.get(item.getName()).incrementCount(item.getCount());
-            updateItemPanel(item); // Ensure the item panel is updated
         } else {
             items.put(item.getName(), item);
             slotItems.put(emptySlot, item);
         }
-
         updateCounter++;
-
-        if (isNewItem || updateCounter >= updateThreshold) {
+        if (updateCounter >= updateThreshold) {
             updateCounter = 0;
-            SwingUtilities.invokeLater(this::refreshInventoryPanel);
-        } else {
-            SwingUtilities.invokeLater(() -> updateItemPanel(item));
         }
+        SwingUtilities.invokeLater(this::refreshInventoryPanel);
         return true;
     }
 
