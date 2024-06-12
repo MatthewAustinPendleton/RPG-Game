@@ -115,7 +115,7 @@ public class Main {
         whisperingtreebark = new Item("Whispering Tree Bark","/whisperingtreebark_transparent.png", 20, 350, 5);
         caspianherb = new Item("Caspian Herb","/caspianherb_transparent.png",15, 400, 5);
         whisperwoodblossom = new Item("Whisperingwood Blossom","/whisperingwoodblossom_transparent.png", 30, 600, 8);
-        cabbageSeed = new Item("Cabbage Seed", "/cabbageGrowing1.png", 85, 75, 1);
+        cabbageSeed = new Item("Cabbage Seed", "/cabbageGrowing1.png", 95, 75, 1);
         cabbage = new Item("Cabbage", "/cabbage-transparent.png", 0, 0, 1);
     }
 

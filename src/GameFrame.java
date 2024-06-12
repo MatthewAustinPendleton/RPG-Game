@@ -187,6 +187,12 @@ public class GameFrame extends JFrame {
     }
 
     private void showPlantMenu(MouseEvent e, JLabel plotLabel) {
+        String plotName = plotLabel.getName();
+        if (plotName != null && farmPlotStates.containsKey(plotName) && !farmPlotStates.get(plotName).equals("/farmplot-transparent.png")) {
+            // Plot is already occupied, do not show the menu
+            System.out.println("Plot is already occupied, cannot plant a new seed.");
+            return;
+        }
         JPopupMenu menu = new JPopupMenu();
         JMenuItem plantItem = new JMenuItem("Plant");
         plantItem.addActionListener(ev -> showSeedSelectionMenu(plotLabel));
@@ -307,11 +313,18 @@ public class GameFrame extends JFrame {
             System.out.println("plotLabel bounds: " + plotLabel.getBounds());
             System.out.println("plotLabel visibility: " + plotLabel.isVisible());
 
-            String plotName = plotLabel.getName();
-            if (plotName != null) {
-                farmPlotStates.put(plotName, imagePath);
-                System.out.println("Farm plot state updated for plot: " + plotName);
+            System.out.println("Farm plot states before planting: ");
+            for (Map.Entry<String, String> entry : farmPlotStates.entrySet()) {
+                System.out.println("Plot: " + entry.getKey() + ", State: " + entry.getValue());
             }
+
+            farmPlotStates.put(plotLabel.getName(), imagePath); // Update the farmPlotStates map
+
+            System.out.println("Farm plot states after planting: ");
+            for (Map.Entry<String, String> entry : farmPlotStates.entrySet()) {
+                System.out.println("Plot: " + entry.getKey() + ", State: " + entry.getValue());
+            }
+
         } catch (Exception exception) {
             System.err.println("Exception while planting the seed!");
             exception.printStackTrace();
@@ -319,7 +332,14 @@ public class GameFrame extends JFrame {
         System.out.println("----- End planting seed -----");
     }
 
-    public void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
+    private void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
+        String plotName = plotLabel.getName();
+        if (plotName != null && farmPlotStates.containsKey(plotName) && !farmPlotStates.get(plotName).equals("/farmplot-transparent.png")) {
+            // Plot is already occupied, do not show the seed selection menu
+            System.out.println("Plot is already occupied, cannot plant a new seed.");
+            return;
+        }
+
         System.out.println("Showing seed selection menu...");
         JPopupMenu seedMenu = new JPopupMenu();
         System.out.println("Inventory seeds:  " + inventory.getItems().stream().map(Item::getName).collect(Collectors.toList()));
@@ -332,6 +352,7 @@ public class GameFrame extends JFrame {
         }
         seedMenu.show(plotLabel, e.getX(), e.getY());
     }
+
 
     public void drawFarmPlots(int farmPlotAmount) {
         if (sceneImagePanel == null) {
@@ -364,6 +385,7 @@ public class GameFrame extends JFrame {
             JLabel plotLabel = new JLabel();
             plotLabel.setBounds(x, y, plotSize, plotSize);
             plotLabel.setOpaque(false);
+            plotLabel.setName("plot_" + (i + 1));
 
             ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
             Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
