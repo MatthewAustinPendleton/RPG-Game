@@ -19,7 +19,8 @@ public class Main {
             peacockbutterfly, cabbagewhitebutterfly, moth, grasshopper, orbweaverspider, jumpingspider, wolfspider,
             blackwidowspider, tarantula, dragonfly, bee, caterpillar, cricket, grovemint, ballofmoss, brambleberry,
             wildonion, dandeliongreen, wildcarrot, woodsorrel, cattailshoot, fiddleheadfern, hazelnut,
-            wildasparagus, twinklingartichoke, moonlitfern, midnightleaf, twinklingberry, starflower, whisperingtreebark, caspianherb, whisperwoodblossom;
+            wildasparagus, twinklingartichoke, moonlitfern, midnightleaf, twinklingberry, starflower, whisperingtreebark, caspianherb, whisperwoodblossom,
+            cabbageSeed, cabbage;
 
     public static void generateItemList() {
         apple = new Item("Apple", "/apple-transparent.png", 50, 20, 1);
@@ -114,6 +115,8 @@ public class Main {
         whisperingtreebark = new Item("Whispering Tree Bark","/whisperingtreebark_transparent.png", 20, 350, 5);
         caspianherb = new Item("Caspian Herb","/caspianherb_transparent.png",15, 400, 5);
         whisperwoodblossom = new Item("Whisperingwood Blossom","/whisperingwoodblossom_transparent.png", 30, 600, 8);
+        cabbageSeed = new Item("Cabbage Seed", "/cabbageGrowing1.png", 85, 75, 1);
+        cabbage = new Item("Cabbage", "/cabbage-transparent.png", 0, 0, 1);
     }
 
     public static void populateLootTables() {
@@ -198,6 +201,7 @@ public class Main {
         whisperingThicketLootTable.add(acorn);
         whisperingThicketLootTable.add(ballofmoss);
         whisperingThicketLootTable.add(twigs);
+        whisperingThicketLootTable.add(cabbageSeed);
         whisperingThicketLootTable.add(wildonion);
         whisperingThicketLootTable.add(dandeliongreen);
         whisperingThicketLootTable.add(wildcarrot);

@@ -2,7 +2,7 @@ public class ToAdd {
     /**
      * To add:
      * 6) I now have images of a seed buried, and subsequent images that show how that seed grows over time. What I want
-     * now is a system where you have a seed in your inventory, for the time being let's just say it's an cabbage seed.
+     * now is a system where you have a seed in your inventory, for the time being let's just say it's a cabbage seed.
      * The idea is that when you're in the farm scene, if you right-click on an "empty" farm plot, that is one where
      * nothing is currently growing, which they all start out as, then you're given the option of planting seeds that are
      * in your inventory. The list will list all unique seeds currently in your inventory. If you select that seed in the
@@ -15,5 +15,12 @@ public class ToAdd {
      * That means every minute the image should change from seed -> sprout -> plant -> near-grown -> fully-grown.
      * That means "/cabbageGrowing1.png" to "/cabbageGrowning2.png", etc.
      *
+     *
+     *
+     * forage experience bar animating from current exp to where the bar should be at after exp is added
+     * make the level up animated in such a way that the level changes in front of the player from skillLevel to
+     * skillLevel+1, i kinda want it to have like a square outline appear behind just the
+     * level number, and have that kinda become '3d' in the sense that it rotates in 3D space and behind the square is
+     * the skill level number + 1, if that makes sense
      */
 }

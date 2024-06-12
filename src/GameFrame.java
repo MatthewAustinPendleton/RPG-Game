@@ -1,11 +1,9 @@
 import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,6 +43,7 @@ public class GameFrame extends JFrame {
     boolean showPercentage = true;
     private int currentFarmPage = 0;
     private Scene previousScene;
+    private Map<String, String> farmPlotStates = new HashMap<>();
 
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
@@ -187,9 +186,145 @@ public class GameFrame extends JFrame {
         SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons));
     }
 
+    private void showPlantMenu(MouseEvent e, JLabel plotLabel) {
+        JPopupMenu menu = new JPopupMenu();
+        JMenuItem plantItem = new JMenuItem("Plant");
+        plantItem.addActionListener(ev -> showSeedSelectionMenu(plotLabel));
+        menu.add(plantItem);
+        menu.show(e.getComponent(), e.getX(), e.getY());
+    }
+
+    private void showSeedSelectionMenu(JLabel plotLabel) {
+        Inventory inventory = getInventory();
+        List<Item> seeds = inventory.getItems().stream().filter(item -> item.getName().endsWith("Seed")).collect(Collectors.toList());
+        if (seeds.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No seeds available to plant.");
+            return;
+        }
+        JPopupMenu seedMenu = new JPopupMenu();
+        for (Item seed : seeds) {
+            JMenuItem seedItem = new JMenuItem(seed.getName());
+            seedItem.addActionListener(ev -> plantSeed(plotLabel, seed.getName()));
+            seedMenu.add(seedItem);
+        }
+        seedMenu.show(plotLabel, plotLabel.getWidth() / 2, plotLabel.getHeight() / 2);
+    }
+
+
+    private void plantSeed(JLabel plotLabel, String seedName) {
+        System.out.println("----- Start planting seed -----");
+        System.out.println("Attempting to plant seed: " + seedName);
+
+        String baseName = seedName.toLowerCase().replace(" seed", "Growing1");
+        String imagePath = "/" + baseName + ".png";
+        System.out.println("Image path constructed: " + imagePath);
+
+        try {
+            URL imageUrl = getClass().getResource(imagePath);
+            if (imageUrl == null) {
+                System.err.println("Error: Seed image URL is null for path: " + imagePath);
+                return;
+            }
+            System.out.println("Image URL: " + imageUrl);
+
+            ImageIcon seedIcon = new ImageIcon(imageUrl);
+            if (seedIcon.getImageLoadStatus() != MediaTracker.COMPLETE) {
+                System.err.println("Error: Seed image is not loaded correctly for path: " + imagePath);
+                return;
+            }
+            System.out.println("Seed image loaded successfully.");
+
+            Image seedImage = seedIcon.getImage();
+            if (seedImage.getWidth(null) == -1 || seedImage.getHeight(null) == -1) {
+                System.err.println("Error: Seed image dimensions are invalid for path: " + imagePath);
+                return;
+            }
+            System.out.println("Seed image dimensions: " + seedImage.getWidth(null) + "x" + seedImage.getHeight(null));
+
+            ImageIcon farmPlotIcon = (ImageIcon) plotLabel.getIcon();
+            if (farmPlotIcon == null) {
+                System.err.println("Error: Farm plot image is null for plotLabel.");
+                return;
+            }
+            System.out.println("Farm plot image icon obtained.");
+
+            Image farmPlotImage = farmPlotIcon.getImage();
+            if (farmPlotImage.getWidth(null) == -1 || farmPlotImage.getHeight(null) == -1) {
+                System.err.println("Error: Farm plot image dimensions are invalid.");
+                return;
+            }
+            System.out.println("Farm plot image dimensions: " + farmPlotImage.getWidth(null) + "x" + farmPlotImage.getHeight(null));
+
+            int plotWidth = plotLabel.getWidth();
+            int plotHeight = plotLabel.getHeight();
+
+            BufferedImage combinedImage = new BufferedImage(plotWidth, plotHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = combinedImage.createGraphics();
+
+            System.out.println("Drawing farm plot image...");
+            g.drawImage(farmPlotImage, 0, 0, plotWidth, plotHeight, null);
+
+            int seedWidth, seedHeight;
+            double seedAspectRatio = (double) seedImage.getWidth(null) / seedImage.getHeight(null);
+            double plotAspectRatio = (double) plotWidth / plotHeight;
+
+            if (seedAspectRatio > plotAspectRatio) {
+                seedWidth = (int) (plotHeight * seedAspectRatio * 0.8); // Reduce the width by 20%
+                seedHeight = (int) (plotHeight * 0.8); // Reduce the height by 20%
+            } else {
+                seedHeight = (int) (plotWidth / seedAspectRatio * 0.8); // Reduce the height by 20%
+                seedWidth = (int) (plotWidth * 0.8); // Reduce the width by 20%
+            }
+
+            int seedX = (plotWidth - seedWidth) / 2;
+            int seedY = (int) ((plotHeight - seedHeight) * 0.15); // Position the seed image higher
+            System.out.println("Calculated seed image position: " + seedX + ", " + seedY);
+            System.out.println("Scaled seed dimensions: " + seedWidth + "x" + seedHeight);
+
+            System.out.println("Drawing seed image...");
+            g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
+            g.dispose();
+
+            System.out.println("Combined image created with dimensions: " + combinedImage.getWidth() + "x" + combinedImage.getHeight());
+
+            plotLabel.setIcon(new ImageIcon(combinedImage));
+            plotLabel.revalidate();
+            plotLabel.repaint();
+
+            System.out.println("Seed image set on plotLabel and repainted.");
+            System.out.println("plotLabel bounds: " + plotLabel.getBounds());
+            System.out.println("plotLabel visibility: " + plotLabel.isVisible());
+
+            String plotName = plotLabel.getName();
+            if (plotName != null) {
+                farmPlotStates.put(plotName, imagePath);
+                System.out.println("Farm plot state updated for plot: " + plotName);
+            }
+        } catch (Exception exception) {
+            System.err.println("Exception while planting the seed!");
+            exception.printStackTrace();
+        }
+        System.out.println("----- End planting seed -----");
+    }
+
+    public void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
+        System.out.println("Showing seed selection menu...");
+        JPopupMenu seedMenu = new JPopupMenu();
+        System.out.println("Inventory seeds:  " + inventory.getItems().stream().map(Item::getName).collect(Collectors.toList()));
+        for (Item seed : inventory.getItems()) {
+            if (seed.getName().toLowerCase().endsWith("seed")) {
+                JMenuItem seedItem = new JMenuItem(seed.getName());
+                seedItem.addActionListener(ev -> plantSeed(plotLabel, seed.getName()));
+                seedMenu.add(seedItem);
+            }
+        }
+        seedMenu.show(plotLabel, e.getX(), e.getY());
+    }
+
     public void drawFarmPlots(int farmPlotAmount) {
         if (sceneImagePanel == null) {
             System.err.println("Error: sceneImagePanel is null!");
+            return;
         }
 
         JPanel farmPanel = new JPanel();
@@ -222,9 +357,20 @@ public class GameFrame extends JFrame {
             Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
             plotLabel.setIcon(new ImageIcon(scaledImage));
 
+            plotLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isRightMouseButton(e)) {
+                        showPlantMenu(e, plotLabel);
+                    }
+                }
+            });
+
             farmPanel.add(plotLabel);
 
             System.out.println("Farm plot: " + (i + 1) + " drawn at x: " + x + ", y: " + y);
+            System.out.println("plotLabel bounds: " + plotLabel.getBounds());
+            System.out.println("plotLabel visibility: " + plotLabel.isVisible());
         }
 
         // Add back button if applicable
@@ -257,7 +403,10 @@ public class GameFrame extends JFrame {
         sceneImagePanel.repaint();
 
         System.out.println("Farm plots drawn. FarmPanel bounds: " + farmPanel.getBounds());
+        System.out.println("sceneImagePanel bounds: " + sceneImagePanel.getBounds());
+        System.out.println("sceneImagePanel visibility: " + sceneImagePanel.isVisible());
     }
+
 
     public void moveAction() {
         Scene currentScene = getCurrentScene();
@@ -307,6 +456,7 @@ public class GameFrame extends JFrame {
             }
         }
     }
+
 
     public void forageAction() {
         if (!foragingManager.getIsForagingBoolean()) {
@@ -568,6 +718,7 @@ public class GameFrame extends JFrame {
     }
 
 
+
     public void clearFarmElements() {
         System.out.println("Clearing farm elements...");
 
@@ -596,6 +747,7 @@ public class GameFrame extends JFrame {
             layeredPane.repaint();
         }
     }
+
 
     public Map<String, Scene> getScenes() {
         return scenes;
