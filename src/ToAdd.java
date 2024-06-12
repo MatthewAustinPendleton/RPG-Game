@@ -16,11 +16,14 @@ public class ToAdd {
      * That means "/cabbageGrowing1.png" to "/cabbageGrowning2.png", etc.
      *
      *
-     *
+     * remove the seed item from your inventory when you plant it
+     * prevent the farm plots from being reverted when you move left and right in the farm plot panel or whatever i called it
      * forage experience bar animating from current exp to where the bar should be at after exp is added
      * make the level up animated in such a way that the level changes in front of the player from skillLevel to
      * skillLevel+1, i kinda want it to have like a square outline appear behind just the
      * level number, and have that kinda become '3d' in the sense that it rotates in 3D space and behind the square is
      * the skill level number + 1, if that makes sense
+     * responsiveness with the right clicks on things that can be right clicked and interacted with in that way
+     * you should NOT be able to press the Farm button while the bank window is open, fix that >_>
      */
 }

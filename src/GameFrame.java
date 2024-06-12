@@ -228,11 +228,23 @@ public class GameFrame extends JFrame {
             System.out.println("Image URL: " + imageUrl);
 
             ImageIcon seedIcon = new ImageIcon(imageUrl);
+
             if (seedIcon.getImageLoadStatus() != MediaTracker.COMPLETE) {
                 System.err.println("Error: Seed image is not loaded correctly for path: " + imagePath);
                 return;
             }
             System.out.println("Seed image loaded successfully.");
+
+            // Decrement the count of the seed item in the inventory
+            Inventory inventory = getInventory();
+            Item seedItem = inventory.getItemByName(seedName);
+            if (seedItem != null) {
+                seedItem.decrementCount(1);
+                if (seedItem.getCount() == 0) {
+                    inventory.removeItem(seedItem, 0);
+                }
+                inventory.refreshInventoryPanel();
+            }
 
             Image seedImage = seedIcon.getImage();
             if (seedImage.getWidth(null) == -1 || seedImage.getHeight(null) == -1) {
