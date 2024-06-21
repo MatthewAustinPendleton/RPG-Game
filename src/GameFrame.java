@@ -43,7 +43,7 @@ public class GameFrame extends JFrame {
     boolean showPercentage = true;
     private int currentFarmPage = 0;
     private Scene previousScene;
-    private Map<String, String> farmPlotStates = new HashMap<>();
+    private Map<String, FarmPlotState> farmPlotStates = new HashMap<>();
 
     public GameFrame(Map<String, Scene> scenes) {
         this.scenes = scenes;
@@ -217,6 +217,18 @@ public class GameFrame extends JFrame {
     }
 
 
+    class FarmPlotState {
+        String seedName;
+        int currentStage;
+        String imagePath;
+
+        public FarmPlotState(String seedName, int currentStage, String imagePath) {
+            this.seedName = seedName;
+            this.currentStage = currentStage;
+            this.imagePath = imagePath;
+        }
+    }
+
     private void plantSeed(JLabel plotLabel, String seedName) {
         System.out.println("----- Start planting seed -----");
         System.out.println("Attempting to plant seed: " + seedName);
@@ -312,13 +324,8 @@ public class GameFrame extends JFrame {
             System.out.println("plotLabel bounds: " + plotLabel.getBounds());
             System.out.println("plotLabel visibility: " + plotLabel.isVisible());
 
-            farmPlotStates.put(plotLabel.getName(), imagePath);
+            farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, 1, imagePath));
             startGrowthTimer(plotLabel, seedName, 1, 5);
-
-            System.out.println("Farm plot states after planting: ");
-            for (Map.Entry<String, String> entry : farmPlotStates.entrySet()) {
-                System.out.println("Plot: " + entry.getKey() + ", State: " + entry.getValue());
-            }
 
         } catch (Exception exception) {
             System.err.println("Exception while planting the seed!");
@@ -341,71 +348,76 @@ public class GameFrame extends JFrame {
                 }
                 String baseName = seedName.toLowerCase().replace(" seed", "Growing" + stage);
                 String imagePath = "/" + baseName + ".png";
-                farmPlotStates.put(plotLabel.getName(), imagePath);
+                farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, stage, imagePath));
 
-                try {
-                    URL imageUrl = getClass().getResource(imagePath);
-                    if (imageUrl == null) {
-                        System.err.println("Error: Seed image URL is null for path: " + imagePath);
-                        return;
-                    }
-                    ImageIcon seedIcon = new ImageIcon(imageUrl);
-                    if (seedIcon.getImageLoadStatus() != MediaTracker.COMPLETE) {
-                        System.err.println("Error: Seed image icon is not loaded for path: " + imagePath);
-                        return;
-                    }
-                    Image seedImage = seedIcon.getImage();
-                    if (seedImage.getWidth(null) == -1 || seedImage.getHeight(null) == -1) {
-                        System.err.println("Error: Seed image dimensions are invalid for path: " + imagePath);
-                        return;
-                    }
-
-                    ImageIcon farmPlotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
-                    if (farmPlotIcon == null) {
-                        System.err.println("Error: Farm plot image is null for plotLabel.");
-                        return;
-                    }
-
-                    Image farmPlotImage = farmPlotIcon.getImage();
-                    if (farmPlotImage.getWidth(null) == -1 || farmPlotImage.getHeight(null) == -1) {
-                        System.err.println("Error: Farm plot image dimensions are invalid for plotLabel.");
-                        return;
-                    }
-
-                    int plotWidth = plotLabel.getWidth();
-                    int plotHeight = plotLabel.getHeight();
-
-                    BufferedImage combinedImage = new BufferedImage(plotWidth, plotHeight, BufferedImage.TYPE_INT_ARGB);
-                    Graphics2D g = combinedImage.createGraphics();
-                    g.drawImage(farmPlotImage, 0, 0, plotWidth, plotHeight, null);
-
-                    int seedWidth, seedHeight;
-                    double seedAspectRatio = (double) seedImage.getWidth(null) / seedImage.getHeight(null);
-                    double plotAspectRatio = (double) plotWidth / plotHeight;
-
-                    if (seedAspectRatio > plotAspectRatio) {
-                        seedWidth = (int) (plotHeight * seedAspectRatio * 0.8);
-                        seedHeight = (int) (plotHeight * 0.8);
-                    } else {
-                        seedHeight = (int) (plotWidth / seedAspectRatio * 0.8);
-                        seedWidth = (int) (plotWidth * 0.8);
-                    }
-
-                    int seedX = (plotWidth - seedWidth) / 2;
-                    int seedY = (plotHeight - seedHeight) / 2 - yOffset * (stage - 1);
-                    g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
-                    g.dispose();
-
-                    plotLabel.setIcon(new ImageIcon(combinedImage));
-                    plotLabel.revalidate();
-                    plotLabel.repaint();
-                } catch (Exception exception) {
-                    System.err.println("Exception during growth stage transition!");
-                    exception.printStackTrace();
-                }
+                updatePlotImage(plotLabel, imagePath, stage);
             }
         });
         timer.start();
+    }
+
+    private void updatePlotImage(JLabel plotLabel, String imagePath, int stage) {
+        final int yOffset = 5;
+        try {
+            URL imageUrl = getClass().getResource(imagePath);
+            if (imageUrl == null) {
+                System.err.println("Error: Seed image URL is null for path: " + imagePath);
+                return;
+            }
+            ImageIcon seedIcon = new ImageIcon(imageUrl);
+            if (seedIcon.getImageLoadStatus() != MediaTracker.COMPLETE) {
+                System.err.println("Error: Seed image icon is not loaded for path: " + imagePath);
+                return;
+            }
+            Image seedImage = seedIcon.getImage();
+            if (seedImage.getWidth(null) == -1 || seedImage.getHeight(null) == -1) {
+                System.err.println("Error: Seed image dimensions are invalid for path: " + imagePath);
+                return;
+            }
+
+            ImageIcon farmPlotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
+            if (farmPlotIcon == null) {
+                System.err.println("Error: Farm plot image is null for plotLabel.");
+                return;
+            }
+
+            Image farmPlotImage = farmPlotIcon.getImage();
+            if (farmPlotImage.getWidth(null) == -1 || farmPlotImage.getHeight(null) == -1) {
+                System.err.println("Error: Farm plot image dimensions are invalid for plotLabel.");
+                return;
+            }
+
+            int plotWidth = plotLabel.getWidth();
+            int plotHeight = plotLabel.getHeight();
+
+            BufferedImage combinedImage = new BufferedImage(plotWidth, plotHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = combinedImage.createGraphics();
+            g.drawImage(farmPlotImage, 0, 0, plotWidth, plotHeight, null);
+
+            int seedWidth, seedHeight;
+            double seedAspectRatio = (double) seedImage.getWidth(null) / seedImage.getHeight(null);
+            double plotAspectRatio = (double) plotWidth / plotHeight;
+
+            if (seedAspectRatio > plotAspectRatio) {
+                seedWidth = (int) (plotHeight * seedAspectRatio * 0.8);
+                seedHeight = (int) (plotHeight * 0.8);
+            } else {
+                seedHeight = (int) (plotWidth / seedAspectRatio * 0.8);
+                seedWidth = (int) (plotWidth * 0.8);
+            }
+
+            int seedX = (plotWidth - seedWidth) / 2;
+            int seedY = (plotHeight - seedHeight) / 2 - yOffset * (stage - 1);
+            g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
+            g.dispose();
+
+            plotLabel.setIcon(new ImageIcon(combinedImage));
+            plotLabel.revalidate();
+            plotLabel.repaint();
+        } catch (Exception exception) {
+            System.err.println("Exception during growth stage transition!");
+            exception.printStackTrace();
+        }
     }
 
     private void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
@@ -463,9 +475,15 @@ public class GameFrame extends JFrame {
             plotLabel.setOpaque(false);
             plotLabel.setName("plot_" + (i + 1));
 
-            ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
-            Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
-            plotLabel.setIcon(new ImageIcon(scaledImage));
+            // Check if the plot has a state
+            if (farmPlotStates.containsKey(plotLabel.getName())) {
+                FarmPlotState state = farmPlotStates.get(plotLabel.getName());
+                updatePlotImage(plotLabel, state.imagePath, state.currentStage);
+            } else {
+                ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
+                Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
+                plotLabel.setIcon(new ImageIcon(scaledImage));
+            }
 
             plotLabel.addMouseListener(new MouseAdapter() {
                 @Override
