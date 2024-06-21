@@ -306,7 +306,7 @@ public class GameFrame extends JFrame {
             }
 
             int seedX = (plotWidth - seedWidth) / 2;
-            int seedY = (plotHeight - seedHeight) / 2 - 15;
+            int seedY = (plotHeight - seedHeight) / 2 - 10;
             System.out.println("Calculated seed image position: " + seedX + ", " + seedY);
             System.out.println("Scaled seed dimensions: " + seedWidth + "x" + seedHeight);
 
@@ -407,7 +407,7 @@ public class GameFrame extends JFrame {
             }
 
             int seedX = (plotWidth - seedWidth) / 2;
-            int seedY = (plotHeight - seedHeight) / 2 - yOffset * (stage - 1);
+            int seedY = ((plotHeight - seedHeight) / 2 - yOffset * (stage - 3)) - 15;
             g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
             g.dispose();
 
