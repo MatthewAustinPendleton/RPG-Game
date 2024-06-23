@@ -106,8 +106,23 @@ public class TabbedPanelInitializer {
         foragingPanel.add(foragingProgressBar, BorderLayout.CENTER);
         statsPanel.add(foragingPanel, BorderLayout.NORTH);
 
+        JLabel farmingLevelLabel = new JLabel("Farming Level: 1");
+        farmingLevelLabel.setFont(new Font("Serif", Font.BOLD, 18));
+
+        JProgressBar farmingProgressBar = new JProgressBar(0, 100);
+        farmingProgressBar.setValue(0);
+        farmingProgressBar.setStringPainted(true);
+        farmingProgressBar.setForeground(Color.GREEN);
+
+        JPanel farmingPanel = new JPanel(new BorderLayout());
+        farmingPanel.add(farmingLevelLabel, BorderLayout.NORTH);
+        farmingPanel.add(farmingProgressBar, BorderLayout.CENTER);
+        statsPanel.add(farmingPanel, BorderLayout.SOUTH);
+
         gameFrame.setForagingLevelLabel(foragingLevelLabel);
         gameFrame.setForagingProgressBar(foragingProgressBar);
+        gameFrame.setFarmingLevelLabel(farmingLevelLabel);
+        gameFrame.setFarmingProgressBar(farmingProgressBar);
     }
 
     private void initCollectionsPanels(Map<String, Scene> scenes, JPanel collectionsCardPanel, Map<String, JPanel> collectionsPanels) {

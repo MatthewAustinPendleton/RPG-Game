@@ -1,0 +1,7 @@
+```makefile
+# Ignore IntelliJ IDEA files and directories
+.idea/
+
+# Ignore out directory
+out/
+```

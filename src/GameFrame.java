@@ -34,7 +34,6 @@ public class GameFrame extends JFrame {
     private JProgressBar foragingProgressBar;
     private JLabel foragingLevelLabel;
     private JPanel collectionsCardPanel;
-    private CardLayout collectionsCardLayout;
     private Map<String, JPanel> collectionsPanels;
     private Set<String> discoveredItems;
     private Map<String, ImageIcon> preloadedImages;
@@ -46,6 +45,10 @@ public class GameFrame extends JFrame {
     private Map<String, FarmPlotState> farmPlotStates = new HashMap<>();
     private Map<String, Timer> growthTimers = new HashMap<>();
     private Map<String, SeedInfo> seedInfoMap;
+    private JLabel farmingLevelLabel;
+    private JProgressBar farmingProgressBar;
+    private FarmingManager farmingManager;
+    private List<FarmPlot> farmPlots = new ArrayList<>();
 
     public GameFrame(Map<String, Scene> scenes, Map<String, SeedInfo> seedInfoMap) {
         this.scenes = scenes;
@@ -57,6 +60,7 @@ public class GameFrame extends JFrame {
 
         // Initialize the foraging manager first
         this.foragingManager = new ForagingManager(this);
+        this.farmingManager = new FarmingManager(this);
 
         mainButtons = new java.util.ArrayList<>(); // Explicitly use java.util.ArrayList
         selectionBox = new JPanel();
@@ -176,7 +180,16 @@ public class GameFrame extends JFrame {
             System.out.println("Button: " + button.getText() + " Size: " + button.getSize());
         });
 
+
+        // Initial amount of farm plots, should be 0 by default
         setFarmPlotAmount(10);
+
+        for (SeedInfo seedInfo : Main.seedInfoMap.values()) {
+            FarmPlot farmPlot = new FarmPlot(seedInfo);
+            farmPlots.add(farmPlot);
+        }
+
+
 
         // Ensure the farm button visibility is updated based on farmPlotAmount
         updateFarmButtonVisibility();
@@ -187,6 +200,101 @@ public class GameFrame extends JFrame {
 
         // Call updateSelectionBox again after validation and repaint
         SwingUtilities.invokeLater(() -> updateSelectionBox(mainButtons));
+    }
+
+    private void harvestCrop(JLabel plotLabel) {
+        // Get the crop type and growth stage from the farm plot
+        String cropName = getCropNameFromPlotLabel(plotLabel);
+        int growthStage = getGrowthStageForCrop(cropName);
+
+        // Check if the crop has reached the maximum growth stage
+        if (growthStage == getMaxGrowthStageForCrop(cropName)) {
+            // Remove the crop image and reset the farm plot image
+            resetFarmPlotImage(plotLabel);
+
+            // Get the crop data (base yield, base experience, etc) from CropData
+            CropData cropData = getCropDataForCrop(cropName);
+
+            // Calculate the actual amount harvested based on the base yield
+            int actualAmountHarvested = calculateActualAmountHarvested(cropData.getBaseYield());
+
+            // Add the harvested crop items to the inventory
+            addHarvestedCropToInventory(cropData, actualAmountHarvested);
+
+            // Calculate the farming experience gained
+            int farmingExperienceGained = calculateFarmingExperiencedGained(cropData.getBaseExperience(), actualAmountHarvested);
+
+            // Update the farming experience and check for level-up
+            updateFarmingExperience(farmingExperienceGained);
+            checkForFarmingLevelUp();
+        }
+
+        public void showLevelUpMessage(int newLevel) {
+            JOptionPane.showMessageDialog(this, "Congratulations! You have reached Farming Level " + newLevel + "!", "Level Up",JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private String getCropNameFromPlotLabel(JLabel plotLabel) {
+        return plotLabel.getName();
+    }
+
+    private int getGrowthStageForCrop(String cropName) {
+        FarmPlot farmPlot = getFarmPlotForCrop(cropName);
+        return farmPlot.getGrowthStage();
+    }
+
+    private int getMaxGrowthStageForCrop(String cropName) {
+        SeedInfo seedInfo = Main.seedInfoMap.get(cropName);
+        return seedInfo.getMaxStage();
+    }
+
+    private CropData getCropDataForCrop(String cropName) {
+        return Main.cropDataMap.get(cropName);
+    }
+
+    private int calculateActualAmountHarvested(int baseYield) {
+        int minAmount = 1;
+        int maxAmount = baseYield * 2;
+        return minAmount + (int) (Math.random() * (maxAmount - minAmount + 1));
+    }
+
+    private void addHarvestedCropToInventory(CropData cropData, int amount) {
+        String itemName = cropData.getCropName();
+        String itemIconPath = cropData.getCropImagePath();
+        for (int i = 0; i < amount; i++) {
+            Item item = new Item(itemName, itemIconPath, 1, cropData.getBaseExperience(), 1, 1);
+            inventory.addItem(item);
+        }
+        FarmingGUI.showHarvestDialog(amount, itemName);
+    }
+
+    private int calculateFarmingExperienceGained(int baseExperience, int actualAmountHarvested) {
+        return baseExperience * actualAmountHarvested;
+    }
+
+    private FarmPlot getFarmPlotForCrop(String cropName) {
+        for (FarmPlot farmPlot : farmPlots) {
+            if (farmPlot.getCropName().equals(cropName)) {
+                return farmPlot;
+            }
+        }
+        return null;
+    }
+
+    public void updateFarmingLevelLabel(int farmingLevel) {
+        if (farmingLevelLabel != null) {
+            farmingLevelLabel.setText("Farming Level: " + farmingLevel);
+            farmingLevelLabel.repaint();
+        }
+    }
+
+    public void updateFarmingProgressBar(long experience, long maxExperience) {
+        if (farmingProgressBar != null) {
+            farmingProgressBar.setMaximum((int) maxExperience);
+            farmingProgressBar.setValue((int) experience);
+            farmingProgressBar.setString(experience + " / " + maxExperience);
+            farmingProgressBar.repaint();
+        }
     }
 
     private void showPlantMenu(MouseEvent e, JLabel plotLabel) {
@@ -218,7 +326,6 @@ public class GameFrame extends JFrame {
         }
         seedMenu.show(plotLabel, plotLabel.getWidth() / 2, plotLabel.getHeight() / 2);
     }
-
 
     class FarmPlotState {
         String seedName;
@@ -445,9 +552,6 @@ public class GameFrame extends JFrame {
         }
     }
 
-
-
-
     private int maxStageForSeed(String seedName) {
         SeedInfo seedInfo = seedInfoMap.get(seedName);
         if (seedInfo != null) {
@@ -455,7 +559,6 @@ public class GameFrame extends JFrame {
         }
         return 5; // Default value if seed doesn't have a max stage number
     }
-
 
     private void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
         String plotName = plotLabel.getName();
@@ -477,7 +580,6 @@ public class GameFrame extends JFrame {
         }
         seedMenu.show(plotLabel, e.getX(), e.getY());
     }
-
 
     public void drawFarmPlots(int farmPlotAmount) {
         if (sceneImagePanel == null) {
@@ -531,6 +633,15 @@ public class GameFrame extends JFrame {
                 }
             });
 
+            plotLabel.addMouseListener(new MouseAdapter() {
+               @Override
+               public void mouseClicked(MouseEvent e) {
+                   if (SwingUtilities.isLeftMouseButton(e)) {
+                       harvestCrop(plotLabel);
+                   }
+               }
+            });
+
             farmPanel.add(plotLabel);
 
             System.out.println("Farm plot: " + (i + 1) + " drawn at x: " + x + ", y: " + y);
@@ -571,7 +682,6 @@ public class GameFrame extends JFrame {
         System.out.println("sceneImagePanel bounds: " + sceneImagePanel.getBounds());
         System.out.println("sceneImagePanel visibility: " + sceneImagePanel.isVisible());
     }
-
 
     public void moveAction() {
         Scene currentScene = getCurrentScene();
@@ -621,7 +731,6 @@ public class GameFrame extends JFrame {
             }
         }
     }
-
 
     public void forageAction() {
         if (!foragingManager.getIsForagingBoolean()) {

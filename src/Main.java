@@ -23,10 +23,20 @@ public class Main {
             cabbageSeed, cabbage;
 
     public static Map<String, SeedInfo> seedInfoMap = new HashMap<>();
+    public static Map<String, CropData> cropDataMap = new HashMap<>();
+
+    public static CropData cabbageCropData = new CropData("Cabbage", "/cabbage-transparent.png", 5, 10);
+    // Add more crop data whenever you add new crops...
 
     public static void initializeSeedInfo() {
         List<Integer> cabbageGrowthTimes = Arrays.asList(30000, 30000, 30000, 30000, 30000);
         seedInfoMap.put("Cabbage Seed", new SeedInfo("Cabbage Seed", 5, cabbageGrowthTimes));
+        // Add more seed info whenever you add new seeds...
+    }
+
+    public static void initializeCropData() {
+        cropDataMap.put(cabbageCropData.getCropName(), cabbageCropData);
+        // Add more crop data whenever you add new crops...
     }
 
     public static void generateItemList() {
@@ -229,6 +239,7 @@ public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             initializeSeedInfo();
+            initializeCropData();
             Map<String, Scene> scenes = loadScenes();
             if (scenes.containsKey("forest")) {
                 new GameFrame(scenes, seedInfoMap);
