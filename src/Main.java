@@ -35,7 +35,7 @@ public class Main {
     }
 
     public static void initializeCropData() {
-        cropDataMap.put(cabbageCropData.getCropName(), cabbageCropData);
+        cropDataMap.put("Cabbage Seed", new CropData("Cabbage", "/cabbage-transparent.png", 5, 10));
         // Add more crop data whenever you add new crops...
     }
 

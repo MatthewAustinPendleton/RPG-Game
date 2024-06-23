@@ -203,53 +203,113 @@ public class GameFrame extends JFrame {
     }
 
     private void harvestCrop(JLabel plotLabel) {
-        // Get the crop type and growth stage from the farm plot
-        String cropName = getCropNameFromPlotLabel(plotLabel);
-        int growthStage = getGrowthStageForCrop(cropName);
-
-        // Check if the crop has reached the maximum growth stage
-        if (growthStage == getMaxGrowthStageForCrop(cropName)) {
-            // Remove the crop image and reset the farm plot image
-            resetFarmPlotImage(plotLabel);
-
-            // Get the crop data (base yield, base experience, etc) from CropData
-            CropData cropData = getCropDataForCrop(cropName);
-
-            // Calculate the actual amount harvested based on the base yield
-            int actualAmountHarvested = calculateActualAmountHarvested(cropData.getBaseYield());
-
-            // Add the harvested crop items to the inventory
-            addHarvestedCropToInventory(cropData, actualAmountHarvested);
-
-            // Calculate the farming experience gained
-            int farmingExperienceGained = calculateFarmingExperiencedGained(cropData.getBaseExperience(), actualAmountHarvested);
-
-            // Update the farming experience and check for level-up
-            updateFarmingExperience(farmingExperienceGained);
-            checkForFarmingLevelUp();
+        System.out.println("----- Start harvestCrop Method ------");
+        String plotName = plotLabel.getName();
+        if (plotName == null || !farmPlotStates.containsKey(plotName)) {
+            System.out.println("Plot is empty, no crop to harvest.");
+            return;
         }
 
-        public void showLevelUpMessage(int newLevel) {
-            JOptionPane.showMessageDialog(this, "Congratulations! You have reached Farming Level " + newLevel + "!", "Level Up",JOptionPane.INFORMATION_MESSAGE);
+        FarmPlotState plotState = farmPlotStates.get(plotName);
+        if (plotState == null) {
+            System.err.println("Error: plotState is null for plot: " + plotName);
+            return;
         }
+
+        String cropName = plotState.seedName;
+        int growthStage = plotState.currentStage;
+        int maxGrowthStage = getMaxGrowthStageForCrop(cropName);
+
+        System.out.println("Crop name: " + cropName);
+        System.out.println("Growth stage for crop: " + growthStage);
+        System.out.println("Max growth stage for crop: " + maxGrowthStage);
+
+        if (growthStage < maxGrowthStage) {
+            System.out.println("Crop is not fully grown, cannot harvest.");
+            return;
+        }
+
+        System.out.println("Crop is fully grown now, proceeding with harvesting...");
+        resetFarmPlotImage(plotLabel);
+
+        CropData cropData = getCropDataForCrop(cropName);
+        if (cropData == null) {
+            System.err.println("Error: cropData is null for crop: " + cropName);
+            return;
+        }
+
+        int actualAmountHarvested = calculateActualAmountHarvested(cropData.getBaseYield());
+        addHarvestedCropToInventory(cropData, actualAmountHarvested);
+        int farmingExperienceGained = calculateFarmingExperienceGained(cropData.getBaseExperience(), actualAmountHarvested);
+        farmingManager.updateFarmingExperience(farmingExperienceGained);
+
+        farmPlotStates.remove(plotName); // Clear the plot state after harvesting
+        System.out.println("----- End harvestCrop Method ------");
+    }
+
+
+
+
+    public void setFarmingLevelLabel(JLabel farmingLevelLabel) {
+        this.farmingLevelLabel = farmingLevelLabel;
+    }
+
+    public void setFarmingProgressBar(JProgressBar farmingProgressBar) {
+        this.farmingProgressBar = farmingProgressBar;
     }
 
     private String getCropNameFromPlotLabel(JLabel plotLabel) {
-        return plotLabel.getName();
+        String plotName = plotLabel.getName();
+        if (plotName != null && farmPlotStates.containsKey(plotName)) {
+            FarmPlotState plotState = farmPlotStates.get(plotName);
+            return plotState.seedName;
+        }
+        return null;
+    }
+
+    private void resetFarmPlotImage(JLabel plotLabel) {
+        ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
+        Image scaledImage = plotIcon.getImage().getScaledInstance(plotLabel.getWidth(), plotLabel.getHeight(), Image.SCALE_SMOOTH);
+        plotLabel.setIcon(new ImageIcon(scaledImage));
     }
 
     private int getGrowthStageForCrop(String cropName) {
+        if (cropName == null) {
+            return 0;
+        }
         FarmPlot farmPlot = getFarmPlotForCrop(cropName);
-        return farmPlot.getGrowthStage();
+        if (farmPlot != null) {
+            System.out.println("Retrieved growth stage for " + cropName + ": " + farmPlot.getGrowthStage());
+            return farmPlot.getGrowthStage();
+        } else {
+            System.out.println("No FarmPlot found for " + cropName + ", returning default growth stage.");
+            return 0;
+        }
     }
 
     private int getMaxGrowthStageForCrop(String cropName) {
+        if (cropName == null) {
+            System.out.println("getMaxGrowthStageForCrop: cropName is null");
+            return 0;
+        }
         SeedInfo seedInfo = Main.seedInfoMap.get(cropName);
+        if (seedInfo == null) {
+            System.out.println("getMaxGrowthStageForCrop: seedInfo is null for cropName: " + cropName);
+            return 0;
+        }
+        System.out.println("getMaxGrowthStageForCrop: Returning maxStage for cropName: " + cropName);
         return seedInfo.getMaxStage();
     }
 
     private CropData getCropDataForCrop(String cropName) {
-        return Main.cropDataMap.get(cropName);
+        CropData cropData = Main.cropDataMap.get(cropName);
+        if (cropData == null) {
+            System.err.println("Error: No cropData found for crop: " + cropName);
+            // Add a default case or error handling here if necessary
+        } else {
+            System.out.println("Retrieved cropData for crop: " + cropName);
+        }
+        return cropData;
     }
 
     private int calculateActualAmountHarvested(int baseYield) {
@@ -445,7 +505,6 @@ public class GameFrame extends JFrame {
     }
 
     private void startGrowthTimer(JLabel plotLabel, String seedName, int currentStage, int maxStage) {
-        final int yOffset = 5;
         Timer timer = new Timer(getGrowthTimeForStage(seedName, currentStage), new ActionListener() {
             private int stage = currentStage;
             @Override
@@ -482,47 +541,35 @@ public class GameFrame extends JFrame {
     }
 
     private void updatePlotImage(JLabel plotLabel, String imagePath, int stage) {
-        final int yOffset = 5;
         try {
+            System.out.println("---- Start updatePlotImage Method ----");
+            System.out.println("Updating plot image for stage: " + stage);
+            System.out.println("Plot label: " + plotLabel.getName());
+            System.out.println("Image path: " + imagePath);
+
             URL imageUrl = getClass().getResource(imagePath);
             if (imageUrl == null) {
                 System.err.println("Error: Seed image URL is null for path: " + imagePath);
                 return;
             }
+
             ImageIcon seedIcon = new ImageIcon(imageUrl);
             if (seedIcon.getImageLoadStatus() != MediaTracker.COMPLETE) {
                 System.err.println("Error: Seed image icon is not loaded for path: " + imagePath);
                 return;
             }
+
             Image seedImage = seedIcon.getImage();
-            if (seedImage.getWidth(null) == -1 || seedImage.getHeight(null) == -1) {
-                System.err.println("Error: Seed image dimensions are invalid for path: " + imagePath);
-                return;
-            }
-
             ImageIcon farmPlotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
-            if (farmPlotIcon == null) {
-                System.err.println("Error: Farm plot image is null for plotLabel.");
-                return;
-            }
-
             Image farmPlotImage = farmPlotIcon.getImage();
-            if (farmPlotImage.getWidth(null) == -1 || farmPlotImage.getHeight(null) == -1) {
-                System.err.println("Error: Farm plot image dimensions are invalid for plotLabel.");
-                return;
-            }
-
             int plotWidth = plotLabel.getWidth();
             int plotHeight = plotLabel.getHeight();
-
             BufferedImage combinedImage = new BufferedImage(plotWidth, plotHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = combinedImage.createGraphics();
             g.drawImage(farmPlotImage, 0, 0, plotWidth, plotHeight, null);
-
             int seedWidth, seedHeight;
             double seedAspectRatio = (double) seedImage.getWidth(null) / seedImage.getHeight(null);
             double plotAspectRatio = (double) plotWidth / plotHeight;
-
             if (seedAspectRatio > plotAspectRatio) {
                 seedWidth = (int) (plotHeight * seedAspectRatio * 0.8);
                 seedHeight = (int) (plotHeight * 0.8);
@@ -530,22 +577,15 @@ public class GameFrame extends JFrame {
                 seedHeight = (int) (plotWidth / seedAspectRatio * 0.8);
                 seedWidth = (int) (plotWidth * 0.8);
             }
-
             int seedX = (plotWidth - seedWidth) / 2;
-            int seedY = ((plotHeight - seedHeight) / 2 - yOffset * (stage - 3)) - 15;
-
-            FarmPlotState plotState = farmPlotStates.get(plotLabel.getName());
-            if (plotState != null && plotState.currentStage == maxStageForSeed(plotState.seedName)) {
-                // Max growth
-            }
-
+            int seedY = ((plotHeight - seedHeight) / 2 - 5 * (stage - 3)) - 15;
             g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
             g.dispose();
-
             plotLabel.setIcon(new ImageIcon(combinedImage));
             plotLabel.revalidate();
             plotLabel.repaint();
-
+            System.out.println("Updated plot image for " + plotLabel.getName() + " to stage " + stage);
+            System.out.println("---- End updatePlotImage ----");
         } catch (Exception exception) {
             System.err.println("Exception during growth stage transition!");
             exception.printStackTrace();

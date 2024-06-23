@@ -22,7 +22,7 @@ public class FarmingManager {
         checkForFarmingLevelUp();
     }
 
-    private void checkForFarmingLevelUp() {
+    void checkForFarmingLevelUp() {
         int newLevel = ExperienceCalculator.calculateNewLevel(farmingExperience, farmingLevel);
         if (newLevel > farmingLevel) {
             farmingLevel = newLevel;
