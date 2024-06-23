@@ -44,9 +44,12 @@ public class GameFrame extends JFrame {
     private int currentFarmPage = 0;
     private Scene previousScene;
     private Map<String, FarmPlotState> farmPlotStates = new HashMap<>();
+    private Map<String, Timer> growthTimers = new HashMap<>();
+    private Map<String, SeedInfo> seedInfoMap;
 
-    public GameFrame(Map<String, Scene> scenes) {
+    public GameFrame(Map<String, Scene> scenes, Map<String, SeedInfo> seedInfoMap) {
         this.scenes = scenes;
+        this.seedInfoMap = seedInfoMap;
         this.currentScene = scenes.get("forest");
         this.previousScene = null; // Start with no previous scene
         this.discoveredItems = new HashSet<>();
@@ -336,24 +339,39 @@ public class GameFrame extends JFrame {
 
     private void startGrowthTimer(JLabel plotLabel, String seedName, int currentStage, int maxStage) {
         final int yOffset = 5;
-        Timer timer = new Timer(30000, new ActionListener() {
+        Timer timer = new Timer(getGrowthTimeForStage(seedName, currentStage), new ActionListener() {
             private int stage = currentStage;
             @Override
             public void actionPerformed(ActionEvent e) {
                 stage++;
-                if (stage > maxStage) {
+                if (stage <= maxStage) {
+                    String baseName = seedName.toLowerCase().replace(" seed", "Growing" + stage);
+                    String imagePath = "/" + baseName + ".png";
+                    farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, stage, imagePath));
+                    SwingUtilities.invokeLater(() -> updatePlotImage(plotLabel, imagePath, stage));
+                    if (stage == maxStage) {
+                        System.out.println(seedName + " has finished growing!");
+                        growthTimers.remove(plotLabel.getName());
+                        ((Timer) e.getSource()).stop();
+                    } else {
+                        startGrowthTimer(plotLabel, seedName, stage, maxStage);
+                    }
+                } else {
+                    growthTimers.remove(plotLabel.getName());
                     ((Timer) e.getSource()).stop();
-                    System.out.println(seedName + " is finished growing.");
-                    return;
                 }
-                String baseName = seedName.toLowerCase().replace(" seed", "Growing" + stage);
-                String imagePath = "/" + baseName + ".png";
-                farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, stage, imagePath));
-
-                updatePlotImage(plotLabel, imagePath, stage);
             }
         });
         timer.start();
+        growthTimers.put(plotLabel.getName(), timer);
+    }
+
+    private int getGrowthTimeForStage(String seedName, int stage) {
+        SeedInfo seedInfo = seedInfoMap.get(seedName);
+        if (seedInfo != null && stage <= seedInfo.getMaxStage() && stage < seedInfo.getGrowthTimes().size()) {
+            return seedInfo.getGrowthTimes().get(stage - 1);
+        }
+        return 300000; // Default to 30 seconds.
     }
 
     private void updatePlotImage(JLabel plotLabel, String imagePath, int stage) {
@@ -408,17 +426,36 @@ public class GameFrame extends JFrame {
 
             int seedX = (plotWidth - seedWidth) / 2;
             int seedY = ((plotHeight - seedHeight) / 2 - yOffset * (stage - 3)) - 15;
+
+            FarmPlotState plotState = farmPlotStates.get(plotLabel.getName());
+            if (plotState != null && plotState.currentStage == maxStageForSeed(plotState.seedName)) {
+                // Max growth
+            }
+
             g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
             g.dispose();
 
             plotLabel.setIcon(new ImageIcon(combinedImage));
             plotLabel.revalidate();
             plotLabel.repaint();
+
         } catch (Exception exception) {
             System.err.println("Exception during growth stage transition!");
             exception.printStackTrace();
         }
     }
+
+
+
+
+    private int maxStageForSeed(String seedName) {
+        SeedInfo seedInfo = seedInfoMap.get(seedName);
+        if (seedInfo != null) {
+            return seedInfo.getMaxStage();
+        }
+        return 5; // Default value if seed doesn't have a max stage number
+    }
+
 
     private void showSeedSelectionMenu(MouseEvent e, JLabel plotLabel) {
         String plotName = plotLabel.getName();

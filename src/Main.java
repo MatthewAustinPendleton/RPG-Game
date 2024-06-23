@@ -22,6 +22,13 @@ public class Main {
             wildasparagus, twinklingartichoke, moonlitfern, midnightleaf, twinklingberry, starflower, whisperingtreebark, caspianherb, whisperwoodblossom,
             cabbageSeed, cabbage;
 
+    public static Map<String, SeedInfo> seedInfoMap = new HashMap<>();
+
+    public static void initializeSeedInfo() {
+        List<Integer> cabbageGrowthTimes = Arrays.asList(30000, 30000, 30000, 30000, 30000);
+        seedInfoMap.put("Cabbage Seed", new SeedInfo("Cabbage Seed", 5, cabbageGrowthTimes));
+    }
+
     public static void generateItemList() {
         apple = new Item("Apple", "/apple-transparent.png", 50, 20, 1);
         blackberry = new Item("Blackberry", "/blackberry-transparent.png", 50, 20, 1);
@@ -221,9 +228,10 @@ public class Main {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+            initializeSeedInfo();
             Map<String, Scene> scenes = loadScenes();
             if (scenes.containsKey("forest")) {
-                new GameFrame(scenes);
+                new GameFrame(scenes, seedInfoMap);
             } else {
                 System.err.println("Error: Initial scene 'forest' not found in scenes map.");
             }
