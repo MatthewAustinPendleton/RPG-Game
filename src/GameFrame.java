@@ -13,7 +13,6 @@ public class GameFrame extends JFrame {
     public java.util.List<JButton> mainButtons;
     public JPanel selectionBox;
     private int selectedButtonIndex = 0;
-
     ButtonPanelInitializer buttonPanelInitializer;
     private BankWindow bankWindow;
     private BackgroundPanel sceneImagePanel;
@@ -247,9 +246,6 @@ public class GameFrame extends JFrame {
         System.out.println("----- End harvestCrop Method ------");
     }
 
-
-
-
     public void setFarmingLevelLabel(JLabel farmingLevelLabel) {
         this.farmingLevelLabel = farmingLevelLabel;
     }
@@ -305,7 +301,6 @@ public class GameFrame extends JFrame {
         CropData cropData = Main.cropDataMap.get(cropName);
         if (cropData == null) {
             System.err.println("Error: No cropData found for crop: " + cropName);
-            // Add a default case or error handling here if necessary
         } else {
             System.out.println("Retrieved cropData for crop: " + cropName);
         }
@@ -505,22 +500,28 @@ public class GameFrame extends JFrame {
     }
 
     private void startGrowthTimer(JLabel plotLabel, String seedName, int currentStage, int maxStage) {
+        Timer existingTimer = growthTimers.get(plotLabel.getName());
+        if (existingTimer != null && existingTimer.isRunning()) {
+            System.out.println("Timer already running for plot: " + plotLabel.getName());
+            return; // Timer already running for this plot, no need to start a new one
+        }
+
+        System.out.println("Starting growth timer for plot: " + plotLabel.getName() + ", seed: " + seedName + ", current stage: " + currentStage);
         Timer timer = new Timer(getGrowthTimeForStage(seedName, currentStage), new ActionListener() {
             private int stage = currentStage;
             @Override
             public void actionPerformed(ActionEvent e) {
                 stage++;
+                System.out.println("Timer tick for plot: " + plotLabel.getName() + ", seed: " + seedName + ", new stage: " + stage);
                 if (stage <= maxStage) {
-                    String baseName = seedName.toLowerCase().replace(" seed", "Growing" + stage);
-                    String imagePath = "/" + baseName + ".png";
-                    farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, stage, imagePath));
-                    SwingUtilities.invokeLater(() -> updatePlotImage(plotLabel, imagePath, stage));
+                    SwingUtilities.invokeLater(() -> {
+                        updatePlotImage(plotLabel, seedName, stage);
+                        farmPlotStates.put(plotLabel.getName(), new FarmPlotState(seedName, stage, ""));
+                    });
                     if (stage == maxStage) {
-                        System.out.println(seedName + " has finished growing!");
+                        System.out.println(seedName + " has finished growing in plot: " + plotLabel.getName());
                         growthTimers.remove(plotLabel.getName());
                         ((Timer) e.getSource()).stop();
-                    } else {
-                        startGrowthTimer(plotLabel, seedName, stage, maxStage);
                     }
                 } else {
                     growthTimers.remove(plotLabel.getName());
@@ -528,6 +529,7 @@ public class GameFrame extends JFrame {
                 }
             }
         });
+        timer.setRepeats(true);
         timer.start();
         growthTimers.put(plotLabel.getName(), timer);
     }
@@ -540,12 +542,27 @@ public class GameFrame extends JFrame {
         return 300000; // Default to 30 seconds.
     }
 
-    private void updatePlotImage(JLabel plotLabel, String imagePath, int stage) {
+    private void restartAllGrowthTimers() {
+        for (Map.Entry<String, FarmPlotState> entry : farmPlotStates.entrySet()) {
+            String plotName = entry.getKey();
+            FarmPlotState state = entry.getValue();
+            JLabel plotLabel = findPlotLabelByName(plotName);
+            if (plotLabel != null) {
+                System.out.println("Restarting timer for plot: " + plotName + ", state: " + state);
+                startGrowthTimer(plotLabel, state.seedName, state.currentStage, getMaxGrowthStageForCrop(state.seedName));
+            } else {
+                System.err.println("Error: No plotLabel found for plotName: " + plotName);
+            }
+        }
+    }
+
+    private void updatePlotImage(JLabel plotLabel, String seedName, int stage) {
         try {
             System.out.println("---- Start updatePlotImage Method ----");
             System.out.println("Updating plot image for stage: " + stage);
-            System.out.println("Plot label: " + plotLabel.getName());
-            System.out.println("Image path: " + imagePath);
+
+            String baseName = seedName.toLowerCase().replace(" seed", "Growing" + stage);
+            String imagePath = "/" + baseName + ".png";
 
             URL imageUrl = getClass().getResource(imagePath);
             if (imageUrl == null) {
@@ -562,11 +579,13 @@ public class GameFrame extends JFrame {
             Image seedImage = seedIcon.getImage();
             ImageIcon farmPlotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
             Image farmPlotImage = farmPlotIcon.getImage();
+
             int plotWidth = plotLabel.getWidth();
             int plotHeight = plotLabel.getHeight();
             BufferedImage combinedImage = new BufferedImage(plotWidth, plotHeight, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = combinedImage.createGraphics();
             g.drawImage(farmPlotImage, 0, 0, plotWidth, plotHeight, null);
+
             int seedWidth, seedHeight;
             double seedAspectRatio = (double) seedImage.getWidth(null) / seedImage.getHeight(null);
             double plotAspectRatio = (double) plotWidth / plotHeight;
@@ -577,19 +596,25 @@ public class GameFrame extends JFrame {
                 seedHeight = (int) (plotWidth / seedAspectRatio * 0.8);
                 seedWidth = (int) (plotWidth * 0.8);
             }
+
             int seedX = (plotWidth - seedWidth) / 2;
             int seedY = ((plotHeight - seedHeight) / 2 - 5 * (stage - 3)) - 15;
             g.drawImage(seedImage, seedX, seedY, seedWidth, seedHeight, null);
             g.dispose();
+
             plotLabel.setIcon(new ImageIcon(combinedImage));
             plotLabel.revalidate();
             plotLabel.repaint();
-            System.out.println("Updated plot image for " + plotLabel.getName() + " to stage " + stage);
+
             System.out.println("---- End updatePlotImage ----");
         } catch (Exception exception) {
             System.err.println("Exception during growth stage transition!");
             exception.printStackTrace();
         }
+    }
+
+    private String generateImagePathForStage(String seedName, int stage) {
+        return "/" + seedName.toLowerCase().replace(" seed", "Growing" + stage) + ".png";
     }
 
     private int maxStageForSeed(String seedName) {
@@ -644,7 +669,6 @@ public class GameFrame extends JFrame {
         int xOffset = (sceneImagePanel.getWidth() - (gridWidth * plotSize + (gridWidth - 1) * horizontalGap)) / 2;
         int yOffset = sceneImagePanel.getHeight() - gridHeight * plotSize - 10;
 
-        // Add farm plots to the farmPanel
         for (int i = startPlot; i < endPlot; i++) {
             int plotIndex = i - startPlot;
             int x = xOffset + (plotIndex % gridWidth) * (plotSize + horizontalGap);
@@ -653,11 +677,11 @@ public class GameFrame extends JFrame {
             plotLabel.setBounds(x, y, plotSize, plotSize);
             plotLabel.setOpaque(false);
             plotLabel.setName("plot_" + (i + 1));
+            System.out.println("Creating plotLabel with name: " + plotLabel.getName());
 
-            // Check if the plot has a state
             if (farmPlotStates.containsKey(plotLabel.getName())) {
                 FarmPlotState state = farmPlotStates.get(plotLabel.getName());
-                updatePlotImage(plotLabel, state.imagePath, state.currentStage);
+                updatePlotImage(plotLabel, state.seedName, state.currentStage);
             } else {
                 ImageIcon plotIcon = new ImageIcon(getClass().getResource("/farmplot-transparent.png"));
                 Image scaledImage = plotIcon.getImage().getScaledInstance(plotSize, plotSize, Image.SCALE_SMOOTH);
@@ -669,17 +693,10 @@ public class GameFrame extends JFrame {
                 public void mouseClicked(MouseEvent e) {
                     if (SwingUtilities.isRightMouseButton(e)) {
                         showPlantMenu(e, plotLabel);
+                    } else if (SwingUtilities.isLeftMouseButton(e)) {
+                        harvestCrop(plotLabel);
                     }
                 }
-            });
-
-            plotLabel.addMouseListener(new MouseAdapter() {
-               @Override
-               public void mouseClicked(MouseEvent e) {
-                   if (SwingUtilities.isLeftMouseButton(e)) {
-                       harvestCrop(plotLabel);
-                   }
-               }
             });
 
             farmPanel.add(plotLabel);
@@ -689,7 +706,6 @@ public class GameFrame extends JFrame {
             System.out.println("plotLabel visibility: " + plotLabel.isVisible());
         }
 
-        // Add back button if applicable
         if (currentFarmPage > 0) {
             JButton backButton = new JButton("<--");
             backButton.setBounds(10, sceneImagePanel.getHeight() - 40, 50, 30);
@@ -700,7 +716,6 @@ public class GameFrame extends JFrame {
             farmPanel.add(backButton);
         }
 
-        // Add next button if applicable
         if (currentFarmPage < totalPages - 1) {
             JButton nextButton = new JButton("-->");
             nextButton.setBounds(sceneImagePanel.getWidth() - 60, sceneImagePanel.getHeight() - 40, 50, 30);
@@ -711,7 +726,6 @@ public class GameFrame extends JFrame {
             farmPanel.add(nextButton);
         }
 
-        // Ensure all components are added to the sceneImagePanel
         sceneImagePanel.removeAll();
         sceneImagePanel.setLayout(null);
         sceneImagePanel.add(farmPanel);
@@ -770,7 +784,13 @@ public class GameFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "Scene not found: " + nextSceneName);
             }
         }
+
+        // Debug: Log the state of timers
+        for (Map.Entry<String, Timer> entry : growthTimers.entrySet()) {
+            System.out.println("Timer state for plot: " + entry.getKey() + ", running: " + entry.getValue().isRunning());
+        }
     }
+
 
     public void forageAction() {
         if (!foragingManager.getIsForagingBoolean()) {
@@ -1023,15 +1043,20 @@ public class GameFrame extends JFrame {
 
         if ("farm".equals(scene.getName())) {
             drawFarmPlots(farmPlotAmount);
+            refreshFarmPlots();  // Refresh farm plots to reflect their current growth stages
+            restartAllGrowthTimers();  // Restart growth timers for farm plots
         }
 
         updateButtonStates();
         updateCollectionsPanel(currentScene);
         validate();
         repaint();
+
+        // Debug: Log the state of timers
+        for (Map.Entry<String, Timer> entry : growthTimers.entrySet()) {
+            System.out.println("Timer state for plot: " + entry.getKey() + ", running: " + entry.getValue().isRunning());
+        }
     }
-
-
 
     public void clearFarmElements() {
         System.out.println("Clearing farm elements...");
@@ -1062,10 +1087,46 @@ public class GameFrame extends JFrame {
         }
     }
 
-
     public Map<String, Scene> getScenes() {
         return scenes;
     }
+
+    private void refreshFarmPlots() {
+        for (Map.Entry<String, FarmPlotState> entry : farmPlotStates.entrySet()) {
+            String plotName = entry.getKey();
+            FarmPlotState state = entry.getValue();
+            JLabel plotLabel = findPlotLabelByName(plotName);
+            System.out.println("Refreshing plot: " + plotName + ", state: " + state);
+            if (plotLabel != null) {
+                updatePlotImage(plotLabel, state.seedName, state.currentStage);
+            } else {
+                System.err.println("Error: No plotLabel found for plotName: " + plotName);
+            }
+        }
+    }
+
+    private JLabel findPlotLabelByName(String plotName) {
+        for (Component component : sceneImagePanel.getComponents()) {
+            if (component instanceof JPanel) {
+                JPanel farmPanel = (JPanel) component;
+                for (Component comp : farmPanel.getComponents()) {
+                    if (comp instanceof JLabel) {
+                        JLabel label = (JLabel) comp;
+                        if (plotName.equals(label.getName())) {
+                            System.out.println("Found plotLabel for plotName: " + plotName);
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+        System.err.println("Error: No plotLabel found for plotName: " + plotName);
+        return null;
+    }
+
+
+
+
 
     private void updateCollectionsPanel(Scene scene) {
         JPanel panel = collectionsPanels.get(scene.getDescription());
